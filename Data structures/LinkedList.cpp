@@ -83,15 +83,3 @@ public:
         }
     }
 };
-
-int main() {
-    LinkedList list;
-    list.append(1);
-    list.append(2);
-    list.append(3);
-    list.display();
-    std::cout << list.findNode(2) << std::endl;
-    list.deleteLast();
-    list.display();
-    return 0;
-}
