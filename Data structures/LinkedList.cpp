@@ -1,5 +1,6 @@
 #include <iostream>
 
+
 class Node {
 public:
     int data;
@@ -25,7 +26,7 @@ public:
     }
 
     void append(int val) {
-        if (head == nullptr) {
+        if (is_list_empty()) {
             head = new Node(val);
         } else {
             Node* current = head;
@@ -36,23 +37,45 @@ public:
         }
     }
 
-    void display() const {
+    void deleteNode(int val) {
+        if (head == nullptr) {
+            return;
+        }
+
         Node* current = head;
-        while (current != nullptr) {
-            std::cout << current->data << " ";
+        Node* previous = nullptr;
+
+
+        while (current != nullptr && current->data != val) {
+            previous = current;
             current = current->next;
         }
-        std::cout << std::endl;
+
+
+        if (current == nullptr) {
+            return;
+        }
+        if (previous == nullptr) {
+            head = current->next;
+        } else {
+            previous->next = current->next;
+        }
+
+        delete current;
     }
 
-    void deleteNode(int val) {
-        Node* current = head;
-        while (current->next->data != val) {
+
+    void printNode(Node* node) const {
+        if (node == nullptr) return;
+        std::cout << node << ' ' << node->data << ' ' << node->next << std::endl;
+    }
+
+    void display() const {
+        Node *current = head;
+        while (current != nullptr) {
+            printNode(current);
             current = current -> next;
         }
-        Node* next_address = current->next->next;
-        delete current->next;
-        current = next_address;
     }
 
     void deleteLast() {
@@ -64,14 +87,42 @@ public:
         current -> next = nullptr;
     }
 
-
-    bool findNode(int val) const {
+    Node* findNode(int val) const {
         Node* current = head;
-        while (current -> next != nullptr) {
-            if (current->data == val) return true;
+        while (current -> data != val && current -> next != nullptr) {
             current = current -> next;
         }
-        return false;
+        if (current -> data == val) return current;
+        throw std::exception();
+    }
+
+    Node* findNext(Node* ptn) const {
+        Node* current = head;
+        while (current -> next != ptn && current -> next != nullptr) {
+            current = current -> next;
+        }
+        if (current -> next == ptn) return current;
+        throw std::exception();
+    }
+
+    Node* findPrev(Node* ptn) const {
+        Node* current = head;
+        while (current -> next != ptn && current -> next != nullptr) {
+            current = current -> next;
+        }
+        if (current -> next == ptn) return current;
+        throw std::exception();
+    }
+
+    void insertNext(Node* current, int val) {
+        Node* next_address = current -> next;
+        current->next = new Node(val);
+        current->next->next = next_address;
+    }
+
+    void insertPrev(Node* current, int val) {
+        Node* prev = findPrev(current);
+        insertNext(prev, val);
     }
 
     ~LinkedList() {
