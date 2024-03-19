@@ -125,6 +125,46 @@ public:
         insertNext(prev, val);
     }
 
+    void appendBegin(int val) {
+        Node* newNode = new Node(val);
+        newNode -> next = head;
+        head = newNode;
+    }
+
+    void swap(int x, int y) {
+        Node *prevX = nullptr, *currX = head;
+        while (currX != nullptr && currX->data != x) {
+            prevX = currX;
+            currX = currX->next;
+        }
+
+        Node *prevY = nullptr, *currY = head;
+        while (currY != nullptr && currY->data != y) {
+            prevY = currY;
+            currY = currY->next;
+        }
+
+        if (currX == nullptr || currY == nullptr) return;
+
+        if (prevX != nullptr) {
+            prevX->next = currY;
+        } else {
+            head = currY;
+        }
+
+
+        if (prevY != nullptr) {
+            prevY->next = currX;
+        } else {
+            head = currX;
+        }
+
+        Node* temp = currY->next;
+        currY->next = currX->next;
+        currX->next = temp;
+
+    }
+
     ~LinkedList() {
         Node* current = head;
         while (current != nullptr) {
