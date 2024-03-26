@@ -16,9 +16,33 @@ class LinkedList {
 private:
     Node* head;
 
+    void clear() {
+        Node* current = head;
+        while (current != nullptr) {
+            Node* temp = current;
+            current = current->next;
+            delete temp;
+        }
+        head = nullptr;
+    }
+
+    void copy(const LinkedList& other) {
+        Node** current = &head;
+        Node* otherCurrent = other.head;
+        while (otherCurrent != nullptr) {
+            *current = new Node(otherCurrent->data);
+            current = &((*current)->next);
+            otherCurrent = otherCurrent->next;
+        }
+    }
+
 public:
     LinkedList() {
         head = nullptr;
+    }
+
+    LinkedList(const LinkedList& other) {
+        copy(other);
     }
 
     bool is_list_empty() const {
@@ -165,12 +189,31 @@ public:
 
     }
 
-    ~LinkedList() {
-        Node* current = head;
-        while (current != nullptr) {
-            Node* temp = current;
-            current = current->next;
-            delete temp;
+    LinkedList& operator=(const LinkedList& other) {
+        if (this != &other) {
+            clear();
+            copy(other);
         }
+        return *this;
+    }
+
+    bool operator==(const LinkedList& other) const {
+        Node* current1 = head;
+        Node* current2 = other.head;
+
+        while (current1 != nullptr && current2 != nullptr) {
+            if (current1->data != current2->data) {
+                return false;
+            }
+            current1 = current1->next;
+            current2 = current2->next;
+        }
+
+        return current1 == nullptr && current2 == nullptr;
+    }
+
+
+    ~LinkedList() {
+        clear();
     }
 };
