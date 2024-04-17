@@ -55,7 +55,8 @@ Tree* dtree(Tree* root, int key) {
         if (root->left == root->right) {
             free(root);
             return NULL;
-        } else if (root->left == NULL) {
+        }
+        else if (root->left == NULL) {
             p = root->right;
             free(root);
             return p;
@@ -64,7 +65,8 @@ Tree* dtree(Tree* root, int key) {
             p = root->left;
             free(root);
             return p;
-        } else {
+        }
+        else {
             p2 = root->right;
             p = root->right;
             while (p->left)
@@ -82,20 +84,25 @@ Tree* dtree(Tree* root, int key) {
 }
 
 
-void tree_print_with_depth(Tree* root, int depth) {
-    if (root == NULL) {
+void visualizeTree(Tree* root, int space) {
+    if (root == NULL)
         return;
-    }
-    tree_print_with_depth(root->right, depth + 1);
-    for (int i = 0; i < depth; i++) {
-        printf("  ");
-    }
-    printf("%d\n", root->value);
-    tree_print_with_depth(root->left, depth + 1);
-}
 
-void tree_print(Tree* root) {
-    tree_print_with_depth(root, 0);
+    // Increase distance between levels
+    space += 10;
+
+    // Process right child first
+    visualizeTree(root->right, space);
+
+    // Print current node after space
+    // count
+    printf("\n");
+    for (int i = 10; i < space; i++)
+        printf(" ");
+    printf("%d\n", root->value);
+
+    // Process left child
+    visualizeTree(root->left, space);
 }
 
 int VertexCount(Tree* root) {

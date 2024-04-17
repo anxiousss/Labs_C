@@ -20,9 +20,7 @@ void order(Tree* node);
 
 Tree* dtree(Tree* root, int key);
 
-void tree_print(Tree* node);
-
-void tree_print_with_depth(Tree* root, int depth);
+void visualizeTree(Tree* node, int depth);
 
 int VertexCount(Tree* root);
 
