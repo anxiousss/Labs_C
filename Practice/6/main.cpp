@@ -11,35 +11,39 @@ struct Person {
 };
 
 int read_person(Person* p) {
-    return scanf("%s %s %d %d %d %d", p->surname, p->initials, &p->school_number, &p->medal_have, &p->scores, &p->credit);
+    return scanf("%s %s %d %d %d %d", p->surname, p->initials, &p->school_number, &p->medal_have, &p->scores, &p->credit) == 6;
 }
 
 
 void to_bin(const char* filename) {
-    FILE* f = std::fopen(filename, "w");
+    FILE* f = std::fopen(filename, "wb");
     Person person;
-    while (read_person(&person) && strcmp(person.surname, "STOP") != 0) {
+    while (read_person(&person)) {
         fwrite(&person, sizeof(person), 1, f);
     }
     fclose(f);
 }
 
 void print(const char* filename) {
-    FILE* f = std::fopen(filename, "r");
+    FILE* f = std::fopen(filename, "rb");
     if (!f) {
         perror("Error file");
     }
     Person p;
     while (fread(&p, sizeof(p), 1, f) == 1) {
         std::cout << p.surname << ' ' << p.initials << ' ' << p.school_number << ' ' << (p.medal_have ? "Yes": "No")
-        << ' ' << p.scores << ' ' << (p.credit ? "Yes": "No") << std::endl;
+                  << ' ' << p.scores << ' ' << (p.credit ? "Yes": "No") << std::endl;
     }
 
     fclose(f);
 }
 
 void sol(const char* filename) {
-    FILE* f = std::fopen(filename, "r");
+    FILE* f = std::fopen(filename, "rb");
+
+    if (!f) {
+        perror("Error file");
+    }
     Person p;
     while (fread(&p, sizeof(p), 1, f)) {
         if (p.medal_have && p.scores <= 2) {
@@ -53,7 +57,7 @@ void sol(const char* filename) {
 
 int main(int argc, char* argv[]) {
 
-    if (argc ==  3) {
+    if (argc == 3) {
         if (strcmp(argv[1], "-d") == 0) {
             to_bin(argv[2]);
         } else if (strcmp(argv[1], "-f") == 0) {
@@ -62,6 +66,5 @@ int main(int argc, char* argv[]) {
             sol(argv[2]);
         }
     }
-
     return 0;
 }
