@@ -1,9 +1,13 @@
 #include <iostream>
 #include <vector>
 #include <queue>
+#include <fstream>
+#include <codecvt>
+#include <string>
 
-int n;
-std::vector<std::vector<int>> bfs_tree_creating(std::vector<std::vector<int>> matrix, int start){
+using namespace std;
+
+std::vector<std::vector<int>> bfs_tree_creating(std::vector<std::vector<int>> matrix, int n, int start) {
     std::vector<bool> d(n, false);
     std::queue<int> q;
     q.push(start);
@@ -32,7 +36,7 @@ std::vector<std::vector<int>> bfs_tree_creating(std::vector<std::vector<int>> ma
     return bfs_tree;
 }
 
-std::vector<int> d_vertex(std::vector<std::vector<int>> matrix, int start) {
+std::vector<int> d_vertex(std::vector<std::vector<int>> matrix, int n, int start) {
     std::queue<int> q;
     q.push(start);
     std::vector<int> d(n, -1);
@@ -50,7 +54,7 @@ std::vector<int> d_vertex(std::vector<std::vector<int>> matrix, int start) {
     return d;
 }
 
-std::vector<int> find_components(std::vector<std::vector<int>> matrix) {
+std::vector<int> find_components(std::vector<std::vector<int>> matrix, int n) {
     int color = 0;
     std::vector<int> d(n, 0);
     for (int i = 0; i < n; ++i) {
@@ -75,37 +79,58 @@ std::vector<int> find_components(std::vector<std::vector<int>> matrix) {
 }
 
 
-int main() {
-    std::cin >> n;
+int main(int argc, char* argv[]) {
+    int n;
+    std::ifstream in(argv[1]);
+
+    in >> n;
     std::vector<std::vector<int>> matrix(n, std::vector<int>(n, 0));
     // ввод матрицы смежности
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            std::cin >> matrix[i][j];
+            in >> matrix[i][j];
         }
     }
 
-    // поиск путей из вершины
-    std::vector<int> vertex = d_vertex(matrix, 0);
-    for (int dv: vertex) {
-        std::cout << dv << ' ';
-    }
-    std::cout << std::endl;
+    std::wofstream out(argv[1]);
 
-    // поиск компонент связности
-    std::vector<int> components = find_components(matrix);
-    for (int c: components) {
-        std::cout << c << ' ';
-    }
-    std::cout << std::endl;
+    out.imbue(locale(locale(), new codecvt_utf8<wchar_t, 0x10ffff, generate_header>));
 
-    // создание bfs дерева
-    std::vector<std::vector<int>> tree = bfs_tree_creating(matrix, 0);
+    std::wstring out_text = L"<Text>\nПути из вершины:";
+
+    out << to_wstring(n) << L'\n';
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            std::cout << tree[i][j] << ' ';
+            out << to_wstring(matrix[i][j]) << L' ';
         }
-        std::cout << std::endl;
+        out << L'\n';
+    }
+    out << out_text << L'\n';
+
+    // поиск путей из вершины
+    std::vector<int> vertex = d_vertex(matrix, n, 0);
+    for (int dv : vertex) {
+        out << to_wstring(dv) << L' ';
+    }
+    out << L'\n';
+
+
+    out << L"Компоненты связности:" << L"\n";
+    // поиск компонент связности
+    std::vector<int> components = find_components(matrix, n);
+    for (int c : components) {
+        out << to_wstring(c) << L' ';
+    }
+
+    out << L"\nBFS дерево:" << L"\n";
+
+    // создание bfs дерева
+    std::vector<std::vector<int>> tree = bfs_tree_creating(matrix, n, 0);
+    for (int i = 0; i < n; ++i) {
+        for (int j = 0; j < n; ++j) {
+            out << to_wstring(tree[i][j]) << L' ';
+        }
+        out << L'\n';
     }
     return 0;
 }
