@@ -92,6 +92,17 @@ int main(int argc, char* argv[]) {
         }
     }
 
+    string temp;
+    in >> temp;
+    wstring string_pos = L"<Positions>\n";
+    if (temp == "<Positions>") {
+        for (int i = 0; i < n; ++i) {
+            int numer, x, y;
+            in >> numer >> x >> y;
+            string_pos += to_wstring(numer) + L' ' + to_wstring(x) + L' ' + to_wstring(y) + L'\n';
+        }
+    }
+
     std::wofstream out(argv[1]);
 
     out.imbue(locale(locale(), new codecvt_utf8<wchar_t, 0x10ffff, generate_header>));
@@ -133,13 +144,14 @@ int main(int argc, char* argv[]) {
         for (int j = 0; j < n; ++j) {
 
             if (tree[i][j] == 1) {
-                rib_colors  += to_wstring(i) + L' ' + to_wstring(j) + L' ' + L"красный\n" ;
-              
+                rib_colors += to_wstring(i) + L' ' + to_wstring(j) + L' ' + L"красный\n";
+
             }
             out << to_wstring(tree[i][j]) << L' ';
         }
         out << L'\n';
     }
-    out << rib_colors;
+
+    out << rib_colors << string_pos;
     return 0;
 }
