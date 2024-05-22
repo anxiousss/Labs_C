@@ -126,11 +126,20 @@ int main(int argc, char* argv[]) {
 
     // создание bfs дерева
     std::vector<std::vector<int>> tree = bfs_tree_creating(matrix, n, 0);
+
+
+    wstring rib_colors = L"<Rib_Colors>\n";
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
+
+            if (tree[i][j] == 1) {
+                rib_colors  += to_wstring(i) + L' ' + to_wstring(j) + L' ' + L"красный\n" ;
+              
+            }
             out << to_wstring(tree[i][j]) << L' ';
         }
         out << L'\n';
     }
+    out << rib_colors;
     return 0;
 }
