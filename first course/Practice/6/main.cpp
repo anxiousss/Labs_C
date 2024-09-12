@@ -1,55 +1,70 @@
 #include <iostream>
-#include <fstream>
-#include <sstream>
-#include <vector>
-#include <string>
+#include <cstring>
 
 struct Person {
-    std::string surname;
-    std::string initials;
+    char surname[20];
+    char initials[20];
     int school_number;
-    bool medal_have;
+    int medal_have;
     int scores;
-    bool credit;
+    int credit;
 };
 
-std::vector<Person> readPeopleFromFile(const std::string& filename) {
-    std::vector<Person> people;
-    std::ifstream file(filename);
-    std::string line;
-
-    if (!file.is_open()) {
-        std::cerr << "Error opening file: " << filename << std::endl;
-        return people;
-    }
-
-    while (std::getline(file, line)) {
-        std::istringstream iss(line);
-        Person person;
-
-        if (iss >> person.surname >> person.initials >> person.school_number >> person.medal_have >> person.scores >> person.credit) {
-            people.push_back(person);
-        } else {
-            std::cerr << "Error reading person data from line: " << line << std::endl;
-        }
-    }
-
-    file.close();
-    return people;
+int read_person(Person* p) {
+    return scanf("%s %s %d %d %d %d", p->surname, p->initials, &p->school_number, &p->medal_have, &p->scores, &p->credit) == 6;
 }
 
-int main() {
-    std::string filename = "test.txt";
-    std::vector<Person> people = readPeopleFromFile(filename);
 
-    for (const auto& person : people) {
-        if (person.medal_have && person.scores <= 40) {
-            std::cout << "Surname: " << person.surname << ", Initials: " << person.initials
-                      << ", School Number: " << person.school_number << ", Medal: "
-                      << (person.medal_have ? "Yes" : "No")
-                      << ", Scores: " << person.scores << ", Credit: " << (person.credit ? "Yes" : "No") << std::endl;
-        }
+void to_bin(const char* filename) {
+    FILE* f = std::fopen(filename, "wb");
+    Person person;
+    while (read_person(&person)) {
+        fwrite(&person, sizeof(person), 1, f);
+    }
+    fclose(f);
+}
+
+void print(const char* filename) {
+    FILE* f = std::fopen(filename, "rb");
+    if (!f) {
+        perror("Error file");
+    }
+    Person p;
+    while (fread(&p, sizeof(p), 1, f) == 1) {
+        std::cout << p.surname << ' ' << p.initials << ' ' << p.school_number << ' ' << (p.medal_have ? "Yes": "No")
+                  << ' ' << p.scores << ' ' << (p.credit ? "Yes": "No") << std::endl;
     }
 
+    fclose(f);
+}
+
+void sol(const char* filename) {
+    FILE* f = std::fopen(filename, "rb");
+
+    if (!f) {
+        perror("Error file");
+    }
+    Person p;
+    while (fread(&p, sizeof(p), 1, f)) {
+        if (p.medal_have && p.scores <= 2) {
+            std::cout << p.surname << ' ' << p.initials << ' ' << p.school_number << ' ' << (p.medal_have ? "Yes": "No")
+                      << ' ' << p.scores << ' ' << (p.credit ? "Yes": "No") << std::endl;
+        }
+    }
+}
+
+
+
+int main(int argc, char* argv[]) {
+
+    if (argc == 3) {
+        if (strcmp(argv[1], "-d") == 0) {
+            to_bin(argv[2]);
+        } else if (strcmp(argv[1], "-f") == 0) {
+            print(argv[2]);
+        } else if(strcmp(argv[1], "-p") == 0) {
+            sol(argv[2]);
+        }
+    }
     return 0;
 }
