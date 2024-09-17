@@ -8,7 +8,7 @@ typedef enum kOpts {
     OPT_H,
     OPT_P,
     OPT_S,
-    OPT_C,
+    OPT_E,
     OPT_A,
     OPT_F
 } kOpts;
@@ -20,39 +20,52 @@ int flag_recognizing(char* str, const char* flag1, const char* flag2) {
 
 
 int GetOpts(int argc, char** argv, kOpts* option, int* number) {
-    if (argc < 2) {
+    if (argc != 3) {
         return 1;
     }
 
-    *number = atoi(argv[1]);
-    if (flag_recognizing(argv[2], "-h", "/h")) {
-        *option = OPT_H;
-        return 0;
+    for (int i = 1; i <= 2; ++i) {
+        const char* procceding_option = argv[i];
+        if (procceding_option[0] == '/' || procceding_option[0] == '-') {
+            switch (procceding_option[1])
+            {
+            case 'h':
+                *option = OPT_H;
+                break;
+            case 'p':
+                *option = OPT_P;
+                break;
+            case 's':
+                *option = OPT_S;
+                break;
+            case 'e':
+                *option = OPT_E;
+                break;
+            case 'a':
+                *option = OPT_A;
+                break;
+            case 'f':
+                *option = OPT_F;
+                break;
+            default:
+                return 1;
+                break;
+            }
+        }
+        else {
+            for (int j = 0; procceding_option[j]; ++j) {
+                if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
+                    *number *= 10;
+                    *number += procceding_option[j] - '0';
+                }
+                else {
+                    return 1;
+                }
+            }
+        }
     }
-    else if (flag_recognizing(argv[2], "-p", "/p")) {
-        *option = OPT_P;
-        return 0;
-    }
-    else if (flag_recognizing(argv[2], "-s", "/s")) {
-        *option = OPT_S;
-        return 0;
-    }
-    else if (flag_recognizing(argv[2], "-c", "/c")) {
-        *option = OPT_C;
-        return 0;
-    }
-    else if (flag_recognizing(argv[2], "-a", "/a")) {
-        *option = OPT_A;
-        return 0;
-    }
-    else if (flag_recognizing(argv[2], "-f", "/f")) {
-        *option = OPT_F;
-        return 0;
-    }
-
-    return 1;
-}
-
+    return 0;
+}   
 
 void HandlerOptH(int number) {
     int flag = 0;
@@ -85,7 +98,7 @@ void HandlerOptS(int number) {
     hex(bin(number, &len, digits), len, discharges);
 }
 
-void HandlerOptC(int number) {
+void HandlerOptE(int number) {
     for (int x = 1; x < number + 1; ++x) {
         for (int d = 1; d < 11; ++d) {
             printf("%f ", pow(x, d));
@@ -105,8 +118,7 @@ int main(int argc, char** argv) {
     void (*handlers[6])(int) = {
         HandlerOptH,
         HandlerOptP,
-        HandlerOptS,
-        HandlerOptC,
+        HandlerOptE,
         HandlerOptA
     };
 
