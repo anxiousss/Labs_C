@@ -2,7 +2,7 @@
 #include <math.h>
 #include "hex.h"
 
-void ReverseArray(int arr[], int size)
+void ReverseArray(int arr[], const int size)
 {
     for (int i = 0; i < size / 2; i++)
     {
@@ -26,9 +26,9 @@ int* bin(int number, int* len, int* digits) {
     return digits;
 }
 
-void hex(int* binary_number, int len, int* discharges) {
+void hex(int* binary_number, const int* len, int* discharges) {
     int k = 0;
-    for (int i = len - 1; i > -1; i -= 4) {
+    for (int i = *len - 1; i > -1; i -= 4) {
         int degree = 0;
         int discharge = 0;
         for (int j = i; j != i - 4; --j) {
@@ -38,7 +38,6 @@ void hex(int* binary_number, int len, int* discharges) {
         discharges[k] = discharge;
         ++k;
     }
-
     for (int i = k - 1; i > -1; --i) {
         printf("%X", discharges[i]);
     }
