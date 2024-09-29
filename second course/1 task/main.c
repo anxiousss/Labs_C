@@ -17,16 +17,24 @@ typedef enum Errors {
     No_numbers
 } Errors;
 
+int len(const char* str) {
+    int i = 0;
+    while (str[i] != '\0') {
+        ++i;
+    }
+    return i;
+}
+
 int GetOpts(int argc, char** argv, kOpts* option, int* number) {
     int digits[100];
-
     if (argc != 3) {
         return 1;
     }
-
+    int flag = 0;
     for (int i = 1; i <= 2; ++i) {
         const char* procceding_option = argv[i];
-        if (procceding_option[0] == '/' || procceding_option[0] == '-') {
+        if ((procceding_option[0] == '/' || procceding_option[0] == '-') && len(procceding_option) == 2 && flag == 0) {
+            flag = 1;
             switch (procceding_option[1])
             {
                 case 'h':
@@ -52,9 +60,11 @@ int GetOpts(int argc, char** argv, kOpts* option, int* number) {
             }
         }
         else {
-            int j = 0;
+            int j = 0, sign = 1;
             for (j; procceding_option[j]; ++j) {
-                if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
+                if (procceding_option[j] == '-' && sign == 1)
+                    sign = -1;
+                else if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
                     digits[j] = procceding_option[j] - '0';
                     *number *= 10;
                     *number += digits[j];
@@ -63,6 +73,7 @@ int GetOpts(int argc, char** argv, kOpts* option, int* number) {
                     return Invalid_number;
                 }
             }
+            *number *= sign;
             if (j > 10) {
                 return Overflow;
             }
@@ -76,12 +87,11 @@ int HandlerOptH(int number) {
     if (x == 0) {
         return Invalid_number;
     }
-    while (number < 101) {
-        if (number % x == 0) {
+    for (int i = 1; i <= 100; ++i) {
+        if (!(i % abs(number))) {
             flag = 1;
-            printf("%d  ", number);
+            printf("%d  ", i);
         }
-        number += x;
     }
     if (!flag) {
         return No_numbers;
@@ -108,10 +118,14 @@ int HandlerOptP(int number) {
 
 
 int HandlerOptS(int number) {
+    if (number <= 0) {
+        return Invalid_number;
+    }
+
     if (number == 0) {
         printf("%d", 0);
     } else {
-        int residue = 0, i = 1;
+        int residue, i = 1;
         int digits[9];
         while (number != 0 ) {
             residue = number % 16;
