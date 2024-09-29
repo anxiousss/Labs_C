@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <math.h>
-#include "hex.h"
+#include <stdlib.h>
 
 typedef enum kOpts {
     OPT_H,
@@ -11,7 +11,15 @@ typedef enum kOpts {
     OPT_F
 } kOpts;
 
+typedef enum Errors {
+    Overflow = 2,
+    Invalid_number,
+    No_numbers
+} Errors;
+
 int GetOpts(int argc, char** argv, kOpts* option, int* number) {
+    int digits[100];
+
     if (argc != 3) {
         return 1;
     }
@@ -44,88 +52,125 @@ int GetOpts(int argc, char** argv, kOpts* option, int* number) {
             }
         }
         else {
-            for (int j = 0; procceding_option[j]; ++j) {
+            int j = 0;
+            for (j; procceding_option[j]; ++j) {
                 if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
+                    digits[j] = procceding_option[j] - '0';
                     *number *= 10;
-                    *number += procceding_option[j] - '0';
+                    *number += digits[j];
                 }
                 else {
-                    return 1;
+                    return Invalid_number;
                 }
+            }
+            if (j > 10) {
+                return Overflow;
             }
         }
     }
     return 0;
 }
 
-void HandlerOptH(int number) {
-    int flag = 0;
-    for (int x = 1; x < 101; ++x) {
-        if (x % number == 0) {
+int HandlerOptH(int number) {
+    int flag = 0, x = number;
+    if (x == 0) {
+        return Invalid_number;
+    }
+    while (number < 101) {
+        if (number % x == 0) {
             flag = 1;
-            printf("%d ", x);
+            printf("%d  ", number);
         }
+        number += x;
     }
-
     if (!flag) {
-        printf("No numbers");
+        return No_numbers;
     }
+    return 0;
 }
 
-void HandlerOptP(int number) {
+int HandlerOptP(int number) {
 
-    if (number == 1) {
-        printf("non-simple non-composite");
-        return;
+    if (number <= 1) {
+        return Invalid_number;
     }
 
-
-    for (int x = 2; x < (int)sqrt(number) + 1; ++x) {
+    for (int x = 2; x <= sqrt(number); ++x) {
         if (number % x == 0) {
             printf("composite number");
-            return;
+            return 0;
         }
     }
     printf("simple number");
-}
-void HandlerOptS(int number) {
-    int len = 0;
-    int digits[33];
-    int discharges[9];
-    hex(bin(number, &len, digits), &len, discharges);
+    return 0;
 }
 
-void HandlerOptE(int number) {
+
+
+int HandlerOptS(int number) {
+    if (number == 0) {
+        printf("%d", 0);
+    } else {
+        int residue = 0, i = 1;
+        int digits[9];
+        while (number != 0 ) {
+            residue = number % 16;
+            if (residue < 10) {
+                residue += 48;
+            } else {
+                residue += 57;
+            }
+            digits[i] = residue;
+            ++i;
+            number /= 16;
+        }
+        for (int j = i - 1; j > 0; --j) {
+            printf("%c", digits[j]);
+        }
+    }
+    return 0;
+}
+
+int HandlerOptE(int number) {
+    if (number == 0) {
+        return Invalid_number;
+    }
+
     for (int x = 1; x < number + 1; ++x) {
         for (int d = 1; d < 11; ++d) {
             printf("%f ", pow(x, d));
         }
         printf("\n");
     }
+    return 0;
 }
 
-void HandlerOptA(int number) {
+int HandlerOptA(int number) {
+    if (number == 0) {
+        return Invalid_number;
+    }
     printf("%d", ((1 + number) / 2) * (number + 1));
+    return 0;
 }
 
-void HandlerOptF(int number) {
+int HandlerOptF(int number) {
     long long factor = 1;
     for (int x = 2; x < number + 1; ++x) {
+        if (factor > LLONG_MAX / x) {
+            return Overflow;
+        }
         factor *= x;
-    }
-    if (factor < 0) {
-        printf("Overflow detected.\n");
-        return;
     }
 
     printf("%lld", factor);
+    return 0;
 }
 
 
 int main(int argc, char** argv) {
     kOpts opt = OPT_H;
     int procceed_number = 0;
-    void (*handlers[6])(int) = {
+    int (*handlers[6])(int) = {
             HandlerOptH,
             HandlerOptP,
             HandlerOptS,
@@ -134,11 +179,9 @@ int main(int argc, char** argv) {
             HandlerOptF
     };
 
-    if (GetOpts(argc, argv, &opt, &procceed_number)) {
-        printf("%s", "Incorrect option");
-        return 1;
+    int result = GetOpts(argc, argv, &opt, &procceed_number);
+    if (result != 0) {
+        return result;
     }
-
-    handlers[opt](procceed_number);
-    return 0;
+    return handlers[opt](procceed_number);
 }
