@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <float.h>
 #include "solution.h"
 
 typedef enum kOpts {
@@ -6,6 +7,12 @@ typedef enum kOpts {
     OPT_M,
     OPT_T
 } kOpts;
+
+typedef enum Errors {
+    Overflow = 2,
+    Invalid_number,
+} Errors;
+
 
 
 double my_atof(const char* str) {
@@ -38,11 +45,21 @@ double my_atof(const char* str) {
     return sign * result;
 }
 
-int GetOpts(int argc, char** argv, kOpts* option, double* eps, double* arr) {
+int len(const char* str) {
+    int i = 0;
+    while (str[i] != '\0') {
+        ++i;
+    }
+    return i;
+}
+
+int GetOpts(int argc, char** argv, kOpts* option, double* eps, double* arr1, int* arr2) {
     int number_argc = 0;
+    int flag = 0;
     for (int i = 1; i <= 2; ++i) {
-        const char* procceding_option = argv[i];
-        if (procceding_option[0] == '/' || procceding_option[0] == '-') {
+        const char *procceding_option = argv[i];
+        if ((procceding_option[0] == '/' || procceding_option[0] == '-') && flag == 0 && len(procceding_option) == 2) {
+            flag = 1;
             switch (procceding_option[1]) {
                 case 'q':
                     *option = OPT_Q;
@@ -66,56 +83,76 @@ int GetOpts(int argc, char** argv, kOpts* option, double* eps, double* arr) {
                     case OPT_T:
                         *eps = my_atof(argv[i]);
                         for (int j = i + 1; j < i + number_argc; ++j) {
-                            arr[j - i - 1] = my_atof(argv[j]);
+                            arr1[j - i - 1] = my_atof(argv[j]);
                         }
                         break;
                     case OPT_M:
-                        for (int j = i; j < i + number_argc; ++j) {
-                            arr[j - i] = my_atof(argv[j]);
+                        int sign = 1;
+                        for (int j = 0; procceding_option[j]; ++j) {
+                            if (procceding_option[j] == '-' && sign == 1)
+                                sign = -1;
+                            else if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
+                                arr2[i - 2] *= 10;
+                                arr2[i - 2] = procceding_option[j] - '0';
+                            } else {
+                                return Invalid_number;
+                            }
+                        }
+                        arr2[i - 2] *= sign;
+                        if (arr2[i - 2] == 0) {
+                            return Invalid_number;
                         }
                         break;
                 }
             } else {
                 return 1;
             }
+
         }
     }
     return 0;
 }
 
-void HandlerOptQ(double eps, double* arr) {
+int HandlerOptQ(double eps, double* arr) {
     permute(arr, 0, 2, eps, eq_solution);
+    return 0;
 }
 
-void HandlerOptM(double eps, double* arr) {
-    if ((int)arr[0] % (int)arr[1] == 0) {
-        printf("multiples ");
+int HandlerOptM(int* arr) {
+    if (arr[0] % arr[1] == 0) {
+        printf("multiplies");
     } else {
-        printf("not multiples ");
+        printf("not multiplies");
     }
+    return 0;
 }
 
-void HandlerOptT(double eps, double* arr) {
-    permute(arr, 0, 2, eps, triangle_check);
+int HandlerOptT(double eps, double* arr) {
+    if (arr[0] > 0 && arr[1] > 0 && arr[2] > 0) {
+        triangle_check(arr[0], arr[1], arr[2], eps);
+        return 0;
+    }
+    return Invalid_number;
 }
 
 
 int main(int argc, char** argv) {
     kOpts opt = 0;
     double eps = 0.0;
-    double arr[4];
-
-    void (*handlers[3])(double, double*) = {
+    double arr1[3];
+    int arr2[2];
+    int (*handlers[2])(double, double*) = {
             HandlerOptQ,
-            HandlerOptM,
             HandlerOptT
     };
 
-    if (GetOpts(argc, argv, &opt, &eps, arr)) {
-        printf("%s\n", "Incorrect option");
-        return 1;
+    int result = GetOpts(argc, argv, &opt, &eps, arr1, arr2);
+    if (result != 0) {
+        return result;
     }
-
-    handlers[opt](eps, arr);
-    return 0;
+    if (opt == OPT_M) {
+        return HandlerOptM(arr2);
+    } else {
+        return handlers[opt](eps, arr1);
+    }
 }
