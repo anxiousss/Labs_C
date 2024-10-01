@@ -62,8 +62,8 @@ int GetOpts(int argc, char** argv, long double* eps, int* x) {
 long double series_a(long double eps, int x) {
     long double prev = -1.0, current = 1.0, total = 1;
     int n = 1;
-    while (fabsl(prev - current) > eps || prev == current) {
-        prev = current;
+    while (fabsl(prev - total) > eps) {
+        prev = total;
         current *= x;
         current /= n;
         ++n;
@@ -75,8 +75,8 @@ long double series_a(long double eps, int x) {
 long double series_b(long double eps, int x) {
     long double prev = -1.0, current = 1.0, total = 1;
     int n = 1;
-    while (fabsl(prev - current) > eps || prev == current) {
-        prev = current;
+    while (fabsl(prev - total) > eps) {
+        prev = total;
         current *= (-1  * x * x);
         current /= ((2 * n) * (2 * n - 1 ));
         ++n;
@@ -93,8 +93,8 @@ long double series_c(long double eps, int x) {
     }
     long double prev = -1.0, current = 1.0, total = 1;
     int n = 1;
-    while (fabsl(prev - current) > eps || prev == current) {
-        prev = current;
+    while (fabsl(prev - total) > eps) {
+        prev = total;
         current *= (9 * x * x * n * n);
         current /= ((3 * n - 1) * (3 * n - 2));
         ++n;
@@ -111,10 +111,10 @@ long double series_d(long double eps, long double x) {
     }
     long double prev = -1.0, current = 1.0, total = 0;
     int n = 1;
-    while (fabsl(prev - current) > eps || prev == current) {
-        prev = current;
-        current *= (-1 * (2 * n + 1) * x * x);
-        current /= (2 * n + 2);
+    while (fabsl(prev - total) > eps) {
+        prev = total;
+        current *= (-1 * (2 * n - 1) * x * x);
+        current /= (2 * n);
         ++n;
         total += current;
     }
