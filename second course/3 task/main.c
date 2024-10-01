@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <float.h>
 #include "solution.h"
 
 typedef enum kOpts {
@@ -87,20 +86,23 @@ int GetOpts(int argc, char** argv, kOpts* option, double* eps, double* arr1, int
                         }
                         break;
                     case OPT_M:
-                        int sign = 1;
-                        for (int j = 0; procceding_option[j]; ++j) {
-                            if (procceding_option[j] == '-' && sign == 1)
-                                sign = -1;
-                            else if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
-                                arr2[i - 2] *= 10;
-                                arr2[i - 2] = procceding_option[j] - '0';
-                            } else {
+                        for (int k = i; k < i + number_argc; ++k) {
+                            int sign = 1;
+                            procceding_option = argv[k];
+                            for (int j = 0; procceding_option[j]; ++j) {
+                                if (procceding_option[j] == '-' && sign == 1)
+                                    sign = -1;
+                                else if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
+                                    arr2[k - 2] *= 10;
+                                    arr2[k - 2] = (procceding_option[j] - '0');
+                                } else {
+                                    return Invalid_number;
+                                }
+                            }
+                            arr2[k - 2] *= sign;
+                            if (arr2[k - 2] == 0) {
                                 return Invalid_number;
                             }
-                        }
-                        arr2[i - 2] *= sign;
-                        if (arr2[i - 2] == 0) {
-                            return Invalid_number;
                         }
                         break;
                 }
