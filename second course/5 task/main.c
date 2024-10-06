@@ -4,42 +4,49 @@
 typedef enum Errors {
     Invalid_epsilon = 2,
     Invalid_number
-};
+} Errors;
 
-long double my_atof(const char* str) {
-    long double result = 0.0;
-    long double fraction = 1.0;
+int my_atof(const char *string, long double *result) {
     int sign = 1;
-    int i = 0;
+    long double number = 0.0;
+    long double fraction = 0.0;
+    int has_fraction = 0;
+    int fraction_digits = 0;
 
-    if (str[i] == '-') {
-        sign = -1;
-        ++i;
+    for (int j = 0; string[j] != '\0'; ++j) {
+        char c = string[j];
+
+        if (c == '-' && j == 0) {
+            sign = -1;
+        } else if (c == '.' && !has_fraction) {
+            has_fraction = 1;
+        } else if (c >= '0' && c <= '9') {
+            if (has_fraction) {
+                fraction = fraction * 10.0 + (c - '0');
+                fraction_digits++;
+            } else {
+                number = number * 10.0 + (c - '0');
+            }
+        } else {
+            return Invalid_epsilon;
+        }
     }
 
-    while (str[i] != '.' && str[i] != '\0') {
-        result = result * 10.0 + (str[i] - '0');
-        ++i;
-    }
-
-    if (str[i] == '.') {
-        ++i;
-    }
-
-    while (str[i] != '\0') {
+    while (fraction_digits > 0) {
         fraction /= 10.0;
-        result += (str[i] - '0') * fraction;
-        ++i;
+        fraction_digits--;
     }
 
-    return sign * result;
+    *result = sign * (number + fraction);
+    return 0;
 }
-
 int GetOpts(int argc, char** argv, long double* eps, int* x) {
     if (argc != 3) {
         return 1;
     }
-    *eps = my_atof(argv[1]);
+    if (my_atof(argv[1], eps)) {
+        return Invalid_epsilon;
+    }
     const char* procceding_option = argv[2];
     int sign = 1;
     for (int j = 0; procceding_option[j]; ++j) {
@@ -125,13 +132,13 @@ long double series_d(long double eps, long double x) {
 int main(int argc, char** argv) {
     long double eps = 0.0;
     int x = 0;
-    if (GetOpts(argc, argv,  &eps, &x)) {
-        printf("%s\n", "Incorrect option");
-        return 1;
+    int result = GetOpts(argc, argv,  &eps, &x);
+    if (result != 0) {
+        return result;
     }
     printf("%Lf\n", series_a(eps, x));
     printf("%Lf\n", series_b(eps, x));
     printf("%Lf\n", series_c(eps, x));
     printf("%Lf\n", series_d(eps, x));
-    return 0;
+    return result;
 }
