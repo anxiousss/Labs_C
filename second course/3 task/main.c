@@ -13,35 +13,39 @@ typedef enum Errors {
 } Errors;
 
 
-
-double my_atof(const char* str) {
-    double result = 0.0;
-    double fraction = 1.0;
+int my_atof(const char *string, double *result) {
     int sign = 1;
-    int i = 0;
+    double number = 0.0;
+    double fraction = 0.0;
+    int has_fraction = 0;
+    int fraction_digits = 0;
 
-    if (str[i] == '-') {
-        sign = -1;
-        ++i;
+    for (int j = 0; string[j] != '\0'; ++j) {
+        char c = string[j];
+
+        if (c == '-' && j == 0) {
+            sign = -1;
+        } else if (c == '.' && !has_fraction) {
+            has_fraction = 1;
+        } else if (c >= '0' && c <= '9') {
+            if (has_fraction) {
+                fraction = fraction * 10.0 + (c - '0');
+                fraction_digits++;
+            } else {
+                number = number * 10.0 + (c - '0');
+            }
+        } else {
+            return Invalid_number;
+        }
     }
 
-
-    while (str[i] != '.' && str[i] != '\0') {
-        result = result * 10.0 + (str[i] - '0');
-        ++i;
-    }
-
-    if (str[i] == '.') {
-        ++i;
-    }
-
-    while (str[i] != '\0') {
+    while (fraction_digits > 0) {
         fraction /= 10.0;
-        result += (str[i] - '0') * fraction;
-        ++i;
+        fraction_digits--;
     }
 
-    return sign * result;
+    *result = sign * (number + fraction);
+    return 0;
 }
 
 int len(const char* str) {
@@ -80,9 +84,15 @@ int GetOpts(int argc, char** argv, kOpts* option, double* eps, double* arr1, int
                 switch (*option) {
                     case OPT_Q:
                     case OPT_T:
-                        *eps = my_atof(argv[i]);
+                        int err = my_atof(argv[i], eps);
+                        if (err) {
+                            return err;
+                        }
                         for (int j = i + 1; j < i + number_argc; ++j) {
-                            arr1[j - i - 1] = my_atof(argv[j]);
+                            err = my_atof(argv[j], arr1 + j - i - 1);
+                            if (err) {
+                                return err;
+                            }
                         }
                         break;
                     case OPT_M:
