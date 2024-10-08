@@ -2,8 +2,8 @@
 #include <math.h>
 
 typedef enum Errors {
-    Invalid_epsilon = 2,
-    Invalid_number
+    Invalid_input = 1,
+    Not_converge = 2
 } Errors;
 
 int my_atof(const char *string, long double *result) {
@@ -28,7 +28,7 @@ int my_atof(const char *string, long double *result) {
                 number = number * 10.0 + (c - '0');
             }
         } else {
-            return Invalid_epsilon;
+            return Invalid_input;
         }
     }
 
@@ -40,33 +40,22 @@ int my_atof(const char *string, long double *result) {
     *result = sign * (number + fraction);
     return 0;
 }
-int GetOpts(int argc, char** argv, long double* eps, int* x) {
+
+
+
+int GetOpts(int argc, char** argv, long double* eps, long double* x) {
     if (argc != 3) {
         return 1;
     }
-    if (my_atof(argv[1], eps)) {
-        return Invalid_epsilon;
-    }
-    const char* procceding_option = argv[2];
-    int sign = 1;
-    for (int j = 0; procceding_option[j]; ++j) {
-        if (procceding_option[j] == '-' && sign == 1)
-            sign = -1;
-        else if (procceding_option[j] >= '0' && procceding_option[j] <= '9') {
-            *x *= 10;
-            *x = procceding_option[j] - '0';
-        } else {
-            return Invalid_number;
-        }
-    }
-    *x *= sign;
+    my_atof(argv[1], eps);
+    my_atof(argv[2], x);
     if (eps < 0) {
-        return Invalid_epsilon;
+        return Invalid_input;
     }
     return 0;
 }
 
-long double series_a(long double eps, int x) {
+long double series_a(long double eps, long double x) {
     long double prev = -1.0, current = 1.0, total = 1;
     int n = 1;
     while (fabsl(prev - total) > eps) {
@@ -79,7 +68,7 @@ long double series_a(long double eps, int x) {
     return total;
 }
 
-long double series_b(long double eps, int x) {
+long double series_b(long double eps, long double x) {
     long double prev = -1.0, current = 1.0, total = 1;
     int n = 1;
     while (fabsl(prev - total) > eps) {
@@ -93,10 +82,9 @@ long double series_b(long double eps, int x) {
 }
 
 
-long double series_c(long double eps, int x) {
-    if (x == 1) {
-        printf("series doesn't converge\n");
-        return 1;
+long double series_c(long double eps, long double x) {
+    if (x >= 1) {
+        return Not_converge;
     }
     long double prev = -1.0, current = 1.0, total = 1;
     int n = 1;
@@ -110,11 +98,9 @@ long double series_c(long double eps, int x) {
     return total;
 }
 
-
 long double series_d(long double eps, long double x) {
-    if (x < 1) {
-        printf("series doesn't converge\n");
-        return 1;
+    if (x >= 1) {
+        return Not_converge;
     }
     long double prev = -1.0, current = 1.0, total = 0;
     int n = 1;
@@ -128,17 +114,26 @@ long double series_d(long double eps, long double x) {
     return total;
 }
 
-
 int main(int argc, char** argv) {
-    long double eps = 0.0;
-    int x = 0;
-    int result = GetOpts(argc, argv,  &eps, &x);
+    long double eps = 0.0, x = 0.0;
+    int result = GetOpts(argc, argv, &eps, &x);
     if (result != 0) {
         return result;
     }
-    printf("%Lf\n", series_a(eps, x));
-    printf("%Lf\n", series_b(eps, x));
-    printf("%Lf\n", series_c(eps, x));
-    printf("%Lf\n", series_d(eps, x));
-    return result;
+    long double (*series[4])(long double, long double) = {
+            series_a,
+            series_b,
+            series_c,
+            series_d
+    };
+
+    for (int i = 0; i < 4; ++i) {
+        long double sum = series[i](eps, x);
+        if (sum == 2) {
+            printf("Not converge\n");
+        } else {
+            printf("%Lf\n", sum );
+        }
+    }
+    return 0;
 }
