@@ -3,8 +3,8 @@
 
 typedef enum kOpts {
     OPT_Q,
-    OPT_M,
-    OPT_T
+    OPT_T,
+    OPT_M
 } kOpts;
 
 typedef enum Errors {
@@ -140,7 +140,7 @@ int HandlerOptM(int* arr) {
 }
 
 int HandlerOptT(double eps, double* arr) {
-    if (arr[0] > 0 && arr[1] > 0 && arr[2] > 0) {
+    if (arr[0] > 0.0 && arr[1] > 0.0 && arr[2] > 0.0) {
         triangle_check(arr[0], arr[1], arr[2], eps);
         return 0;
     }
