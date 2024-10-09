@@ -1,10 +1,5 @@
 #include "solution.h"
 
-int min(int a, int b) {
-    return a < b ? a : b;
-}
-
-
 int split(FILE* file, char** buffer, int* word_index, int* char_index, int* buffer_size, int* word_size) {
     char c;
     while ((c = fgetc(file)) != EOF) {
@@ -57,6 +52,8 @@ int buffer_alloc(char*** buffer, int buffer_size, int word_size) {
     }
     return 0;
 }
+
+
 int HandlerOptR(const char** paths) {
     if (strcmp(paths[0], paths[1]) == 0) {
         return Equal_paths;
@@ -119,15 +116,19 @@ int HandlerOptR(const char** paths) {
     }
     // Здесь можно добавить логику обработки файлов
 
-    int end = min(buffer_size1, buffer_size2);
-    for (int i = 0; i < end; ++i) {
-        if (i % 2 == 0) {
-            fprintf(out, "%s", buffer1[i]);
-        } else {
-            fprintf(out, "%s", buffer2[i]);
+
+    // Определяем максимальное количество лексем, которое нужно обработать
+    int max_words = word_index1 > word_index2 ? word_index1 : word_index2;
+
+    // Записываем лексемы в выходной файл
+    for (int i = 0; i < max_words; ++i) {
+        if (i < word_index1) {
+            fprintf(out, "%s ", buffer1[i]);
+        }
+        if (i < word_index2) {
+            fprintf(out, "%s ", buffer2[i]);
         }
     }
-
 
     // Освобождаем память
     for (int i = 0; i < buffer_size1; ++i) {
