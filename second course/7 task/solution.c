@@ -122,12 +122,20 @@ int HandlerOptR(const char** paths) {
 
     // Записываем лексемы в выходной файл
     for (int i = 0; i < max_words; ++i) {
-        if (i < word_index1) {
+        
+        if (i < word_index1 && i < word_index2) {
+            if (i % 2 == 0) {
+                fprintf(out, "%s ", buffer1[i]);
+            } else {
+                fprintf(out, "%s ", buffer2[i]);
+            }
+        }
+        else if (i < word_index1) {
             fprintf(out, "%s ", buffer1[i]);
-        }
-        if (i < word_index2) {
+        } 
+        else if (i < word_index2) {
             fprintf(out, "%s ", buffer2[i]);
-        }
+        } 
     }
 
     // Освобождаем память
