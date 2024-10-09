@@ -31,12 +31,22 @@ int GetOpts(int argc, char** argv, kOpts* option, const char** paths) {
             if (len(argv[i]) > PATH_MAX) {
                 return Invalid_input;
             }
-            paths[path_index++] = argv[i];
+            paths[path_index] = malloc((len(argv[i]) + 1) * sizeof(char));
+            if (paths[path_index] == NULL) {
+                for (int j = 0; j < path_index; ++j) {
+                    free(paths[j]);
+                }
+                return Memory_leak;
+            }
+            strcpy(paths[path_index], argv[i]);
+            path_index++;
         }
     }
 
-    // Проверка, что все пути были считаны
     if (path_index != 3) {
+        for (int j = 0; j < path_index; ++j) {
+            free(paths[j]);
+        }
         return Invalid_input;
     }
 
@@ -52,6 +62,9 @@ int main(int argc, char** argv) {
     int result = GetOpts(argc, argv, &opt, paths);
 
     if (result) {
+        for (int i = 0; i < 3; ++i) {
+            free(paths[i]);
+        }
         free(paths);
         return result;
     }
@@ -63,6 +76,10 @@ int main(int argc, char** argv) {
 
     int handler_result = handlers[opt](paths);
 
+    for (int i = 0; i < 3; ++i) {
+        free(paths[i]);
+    }
     free(paths);
+
     return handler_result;
 }
