@@ -19,11 +19,15 @@ typedef enum Errors {
     Equal_paths
 } Errors;
 
-int split(FILE* file, char** buffer, int* word_index, int* char_index, int* buffer_size, int* word_size);
+int len(const char* str);
 
-int HandlerOptR(const char** paths);
+int base_conversion(int number, char* result, int based);
 
-int HandlerOptA(const char** paths);
+int split(FILE* file, char*** buffer, int* word_index, int* char_index, int* buffer_size, int* word_size);
+
+int HandlerOptR(char** paths);
+
+int HandlerOptA(char** paths);
 
 int buffer_alloc(char*** buffer, int buffer_size, int word_size);
 

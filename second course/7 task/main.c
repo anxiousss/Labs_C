@@ -1,14 +1,6 @@
 #include "solution.h"
 
-int len(const char* str) {
-    int i = 0;
-    while (str[i] != '\0') {
-        ++i;
-    }
-    return i;
-}
-
-int GetOpts(int argc, char** argv, kOpts* option, const char** paths) {
+int GetOpts(int argc, char** argv, kOpts* option, char** paths) {
     if (argc != 4 && argc != 5) {
         return 1;
     }
@@ -31,12 +23,22 @@ int GetOpts(int argc, char** argv, kOpts* option, const char** paths) {
             if (len(argv[i]) > PATH_MAX) {
                 return Invalid_input;
             }
-            paths[path_index++] = argv[i];
+            paths[path_index] = malloc((len(argv[i]) + 1) * sizeof(char));
+            if (paths[path_index] == NULL) {
+                for (int j = 0; j < path_index; ++j) {
+                    free(paths[j]);
+                }
+                return Memory_leak;
+            }
+            strcpy(paths[path_index], argv[i]);
+            path_index++;
         }
     }
 
-    // Проверка, что все пути были считаны
     if (path_index != 3) {
+        for (int j = 0; j < path_index; ++j) {
+            free(paths[j]);
+        }
         return Invalid_input;
     }
 
@@ -45,24 +47,31 @@ int GetOpts(int argc, char** argv, kOpts* option, const char** paths) {
 
 int main(int argc, char** argv) {
     kOpts opt = 1;
-    const char** paths = malloc(3 * sizeof(char*));
+    char** paths = malloc(3 * sizeof(char*));
     if (paths == NULL) {
         return Memory_leak;
     }
     int result = GetOpts(argc, argv, &opt, paths);
 
     if (result) {
+        for (int i = 0; i < 3; ++i) {
+            free(paths[i]);
+        }
         free(paths);
         return result;
     }
 
-    int (*handlers[2])(const char**) = {
+    int (*handlers[2])(char**) = {
             HandlerOptR,
             HandlerOptA
     };
 
     int handler_result = handlers[opt](paths);
 
+    for (int i = 0; i < 3; ++i) {
+        free(paths[i]);
+    }
     free(paths);
+
     return handler_result;
 }
