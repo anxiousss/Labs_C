@@ -14,13 +14,13 @@ int HandlerOptD(char* in, char* out) {
     FILE* fin1 = fopen(in, "r");
     FILE* fin2 = fopen(out, "w");
 
-    if (!fin1 || fin2) {
+    if (!fin1 || !fin2) {
         if (fin1) fclose(fin1);
         if (fin2) fclose(fin2);
         return Memory_leak;
     }
     int c;
-    while (feof(fin1)) {
+    while (!feof(fin1)) {
         c = fgetc(fin1);
         if (c > 0 && !(c >= '0' && c <= '9'))
             fputc(c, fin2);
