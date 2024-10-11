@@ -16,7 +16,8 @@ typedef enum kOpts {
 
 typedef enum Errors {
     Invalid_input = 2,
-    Equal_paths
+    Equal_paths,
+    Memory_leak
 } Errors;
 
 int len(const char* str);

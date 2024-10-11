@@ -31,6 +31,36 @@ int HandlerOptD(char* in, char* out) {
 }
 
 int HandlerOptI(char* in, char* out) {
+    FILE* fin1 = fopen(in, "r");
+    FILE* fin2 = fopen(out, "w");
+
+    if (!fin1 || !fin2) {
+        if (fin1) fclose(fin1);
+        if (fin2) fclose(fin2);
+        return Memory_leak;
+    }
+
+    int c, latin_letters = 0, line_number = 0, flag = 0;
+    while (!feof(fin1)) {
+        c = fgetc(fin1);
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+            ++latin_letters;
+            flag = 1;
+        }
+        else if (c == '\n') {
+            flag = 0;
+            ++line_number;
+            fprintf(fin2, "String %d contains %d latin letters\n", line_number, latin_letters);
+            latin_letters = 0;
+        }
+    }
+
+    if (flag) {
+        fprintf(fin2, "String %d contains %d latin letters\n", line_number + 1, latin_letters);
+    }
+
+    fclose(fin1);
+    fclose(fin2);
     return 0;
 }
 
