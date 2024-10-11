@@ -50,30 +50,36 @@ int split(FILE* file, char*** buffer, int* word_index, int* char_index, int* buf
         if (c != ' ' && c != '\n' && c != '\t') {
             if (*word_index >= *buffer_size)  {
                 *buffer_size *= 2;
-                *buffer = realloc(*buffer, sizeof(char*) * *buffer_size);
-                if (*buffer == NULL) {
+                char** tmp1 = (char** )realloc(*buffer, sizeof(char*) * *buffer_size);
+                if (tmp1 == NULL) {
+                    free(tmp1);
                     return Memory_leak;
                 }
-                // Инициализация новых элементов массива
-                for (int i = *buffer_size / 2; i < *buffer_size; ++i) {
-                    (*buffer)[i] = NULL;
+                *buffer = tmp1;
+                for (int i = *word_index; i < *buffer_size; ++i) {
+                    (*buffer)[i] = (char* ) malloc(*word_size * sizeof(char));
                 }
             }
             if (*char_index >= *word_size) {
                 *word_size *= 2;
-                (*buffer)[*word_index] = realloc((*buffer)[*word_index], sizeof(char) * *word_size);
-                if ((*buffer)[*word_index] == NULL) {
+                char* tmp2 = (char* )realloc((*buffer)[*word_index], sizeof(char) * (*word_size));
+                if (tmp2 == NULL) {
+                    free(tmp2);
                     return Memory_leak;
+                }
+                (*buffer)[*word_index] = tmp2;
+                for (int i = *char_index; i < *word_size; ++i) {
+                    (*buffer)[*word_index][i] = ' ';
                 }
             }
             (*buffer)[*word_index][*char_index] = c;
             (*char_index)++;
-        } else if (c == '\n') {
-            continue;
         } else {
-            (*buffer)[*word_index][*char_index] = '\0';
-            (*word_index)++;
-            *char_index = 0;
+            if (*char_index > 0) {
+                (*buffer)[*word_index][*char_index] = '\0';
+                (*word_index)++;
+                *char_index = 0;
+            }
         }
     }
     if (*char_index > 0) {
@@ -84,12 +90,12 @@ int split(FILE* file, char*** buffer, int* word_index, int* char_index, int* buf
 }
 
 int buffer_alloc(char*** buffer, int buffer_size, int word_size) {
-    *buffer = malloc(buffer_size * sizeof(char*));
+    *buffer = (char**)malloc(buffer_size * sizeof(char*));
     if (*buffer == NULL) {
         return Memory_leak;
     }
     for (int i = 0; i < buffer_size; ++i) {
-        (*buffer)[i] = malloc(word_size * sizeof(char));
+        (*buffer)[i] = (char*)malloc(word_size * sizeof(char));
         if ((*buffer)[i] == NULL) {
             for (int j = 0; j < i; ++j) {
                 free((*buffer)[j]);
@@ -127,10 +133,6 @@ int HandlerOptR(char** paths) {
         fclose(fin1);
         fclose(fin2);
         fclose(out);
-        for (int i = 0; i < buffer_size1; ++i) {
-            free(buffer1[i]);
-        }
-        free(buffer1);
         return alloc_res1;
     }
 
@@ -142,10 +144,6 @@ int HandlerOptR(char** paths) {
         fclose(fin1);
         fclose(fin2);
         fclose(out);
-        for (int i = 0; i < buffer_size2; ++i) {
-            free(buffer2[i]);
-        }
-        free(buffer2);
         return alloc_res2;
     }
 
@@ -256,7 +254,8 @@ int HandlerOptA(char** paths) {
                 if (err) {
                     return err;
                 }
-                fprintf(out, "%s ", result);
+                fprintf(out, "%s", result);
+                putc(' ', out);
             }
         } else if (i % 2 == 0) {
             for (int j = 0; buffer1[i][j] != '\0'; ++j) {
@@ -271,7 +270,8 @@ int HandlerOptA(char** paths) {
                 if (err) {
                     return err;
                 }
-                fprintf(out, "%s ", result);
+                fprintf(out, "%s", result);
+                putc(' ', out);
             }
         }  else {
             fprintf(out, "%s ", buffer1[i]);
