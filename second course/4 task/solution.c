@@ -10,7 +10,6 @@ void hex(int x, char* result, int size) {
     }
 }
 
-
 int HandlerOptD(char* in, char* out) {
     FILE* fin1 = fopen(in, "r");
     FILE* fin2 = fopen(out, "w");
@@ -114,5 +113,25 @@ int HandlerOptA(char* in, char* out) {
     }
     fclose(fin1);
     fclose(fin2);
+    return 0;
+}
+
+int check_file_names(const char *file1, const char *file2) {
+    const char * name1 = strrchr(file1,'\\');
+    const char * name2 = strrchr(file2,'\\');
+    if (name1 != NULL) {
+        name1++;
+    } else {
+        name1 = file1;
+    }
+    if (name2 != NULL) {
+        name2++;
+    } else {
+        name2 = file2;
+    }
+
+    if (strcmp(name1, name2) == 0) {
+        return 1;
+    }
     return 0;
 }
