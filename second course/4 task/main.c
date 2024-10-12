@@ -2,6 +2,7 @@
 
 int GetOpts(int argc, char** argv, kOpts* opt, char* in_path, char* out_path) {
     if (argc < 2 || argc > 4) {
+        printf("Invalid input");
         return Invalid_input;
     }
 
@@ -16,6 +17,7 @@ int GetOpts(int argc, char** argv, kOpts* opt, char* in_path, char* out_path) {
         } else if (flag != 'n' && argc == 3) {
             strcat(out_path, in_path);
         } else {
+            printf("Invalid input");
             return Invalid_input;
         }
 
@@ -33,13 +35,16 @@ int GetOpts(int argc, char** argv, kOpts* opt, char* in_path, char* out_path) {
                 *opt = OPT_A;
                 break;
             default:
+                printf("Invalid input");
                 return Invalid_input;
         }
     } else {
+        printf("Invalid input");
         return Invalid_input;
     }
 
-    if (strcmp(in_path, out_path) == 0) {
+    if (check_file_names(in_path, out_path)) {
+        printf("Equal Paths");
         return Equal_paths;
     }
 
