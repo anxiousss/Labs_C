@@ -3,8 +3,10 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #include <limits.h>
 #include <math.h>
+#include <unistd.h>
 
 typedef enum kOpts {
     OPT_D,
@@ -29,5 +31,5 @@ int HandlerOptS(char* in, char* out);
 
 int HandlerOptA(char* in, char* out);
 
-
+int check_file_names(const char *file1, const char *file2);
 #endif //SOLUTION_H
