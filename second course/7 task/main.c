@@ -1,4 +1,4 @@
-#include "solution.h"
+ъ#include "solution.h"
 
 int GetOpts(int argc, char** argv, kOpts* option, char** paths) {
     if (argc != 4 && argc != 5) {
@@ -23,7 +23,7 @@ int GetOpts(int argc, char** argv, kOpts* option, char** paths) {
             if (len(argv[i]) > PATH_MAX) {
                 return Invalid_input;
             }
-            paths[path_index] = malloc((len(argv[i]) + 1) * sizeof(char));
+            paths[path_index] = (char*)malloc((len(argv[i]) + 1) * sizeof(char));
             if (paths[path_index] == NULL) {
                 for (int j = 0; j < path_index; ++j) {
                     free(paths[j]);
@@ -35,19 +35,12 @@ int GetOpts(int argc, char** argv, kOpts* option, char** paths) {
         }
     }
 
-    if (path_index != 3) {
-        for (int j = 0; j < path_index; ++j) {
-            free(paths[j]);
-        }
-        return Invalid_input;
-    }
-
     return 0;
 }
 
 int main(int argc, char** argv) {
     kOpts opt = 1;
-    char** paths = malloc(3 * sizeof(char*));
+    char** paths = (char**)malloc(3 * sizeof(char*));
     if (paths == NULL) {
         return Memory_leak;
     }
@@ -68,7 +61,7 @@ int main(int argc, char** argv) {
 
     int handler_result = handlers[opt](paths);
 
-    for (int i = 0; i < 3; ++i) {
+    for (int i = 0; i < argc - 2; ++i) {
         free(paths[i]);
     }
     free(paths);
