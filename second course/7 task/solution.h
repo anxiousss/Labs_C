@@ -19,16 +19,32 @@ typedef enum Errors {
     Equal_paths
 } Errors;
 
+struct WordsBuffer {
+    int size, capacity;
+    char** words;
+    int* word_sizes;
+    int* word_capacities;
+};
+
+typedef struct WordsBuffer WordsBuffer;
+
 int len(const char* str);
 
 int base_conversion(int number, char* result, int based);
-
-int split(FILE* file, char*** buffer, int* word_index, int* char_index, int* buffer_size, int* word_size);
 
 int HandlerOptR(char** paths);
 
 int HandlerOptA(char** paths);
 
-int buffer_alloc(char*** buffer, int buffer_size, int word_size);
+WordsBuffer* create_buffer();
 
-#endif //SOLUTION_H
+int insert_symbol(WordsBuffer* buffer, char c);
+
+int insert_word(WordsBuffer* buffer);
+
+int split_by_words(WordsBuffer* buffer, FILE* file);
+
+void free_buffer(WordsBuffer* buffer);
+
+
+#endif //SOLUTION_H~
