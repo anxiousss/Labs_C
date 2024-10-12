@@ -1,11 +1,10 @@
-
-
 #ifndef SOLUTION_H
 #define SOLUTION_H
 
 #include <stdio.h>
 #include <string.h>
 #include <limits.h>
+#include <math.h>
 
 typedef enum kOpts {
     OPT_D,
@@ -20,7 +19,7 @@ typedef enum Errors {
     Memory_leak
 } Errors;
 
-int len(const char* str);
+void hex(int x, char* result, int size);
 
 int HandlerOptD(char* in, char* out);
 
