@@ -56,5 +56,18 @@ int main(int argc, char** argv) {
 
     int (*handlers[4])(char*, char*) = {HandlerOptD, HandlerOptI, HandlerOptS, HandlerOptA};
 
-    return handlers[opt](in_path, out_path);
+    result = handlers[opt](in_path, out_path);
+    switch (result) {
+        case Invalid_input:
+            printf("Invalid input");
+            break;
+        case Equal_paths:
+            printf("Equal Paths");
+            break;
+        case Memory_leak:
+            printf("Memory leak");
+            break;
+        default:
+            return result;
+    }
 }
