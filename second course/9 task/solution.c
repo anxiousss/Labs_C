@@ -1,12 +1,14 @@
 #include "solution.h"
 
+
 int cmp_func(const void* a, const void* b) {
     return (*(int*)a - *(int*)b);
 }
 
 int my_atoi(const char* str, int* number) {
     int sign = 1;
-    for (int i = 0; str[i] ; ++i) {
+    *number = 0;
+    for (int i = 0; str[i]; ++i) {
         if (str[i] == '-' && sign == 1)
             sign = -1;
         else if (str[i] >= '0' && str[i] <= '9') {
@@ -35,7 +37,7 @@ void print_arr(int* arr, int size) {
 }
 
 int binary_search(int* arr, int value, int size) {
-    int closest;
+    int closest = 0;
     int left = 0, right = size - 1, mid;
 
     while (left <= right) {
@@ -51,7 +53,6 @@ int binary_search(int* arr, int value, int size) {
 
         else if (arr[mid] > value)
             right = mid - 1;
-
     }
     return closest;
 }
@@ -93,12 +94,12 @@ int task2() {
     int size_A = 10 + rand() % (10000 - 10 + 1);
     int size_B = 10 + rand() % (10000 - 10 + 1);
 
-    int* A = (int*)(malloc(sizeof(int) * size_A));
+    int* A = (int*)malloc(sizeof(int) * size_A);
     if (A == NULL) {
         return Memory_leak;
     }
 
-    int* B = (int*)(malloc(sizeof(int) * size_B));
+    int* B = (int*)malloc(sizeof(int) * size_B);
     if (B == NULL) {
         free(A);
         return Memory_leak;
@@ -121,7 +122,7 @@ int task2() {
     qsort(B, size_B, sizeof(int), cmp_func);
 
     for (int i = 0; i < size_A; ++i) {
-        C[i] = A[i] + binary_search(B, A[i], size_B);
+        C[i] = A[i] + B[binary_search(B, A[i], size_B)];
     }
 
     printf("Array A\n");
