@@ -1,4 +1,4 @@
-ъ#include "solution.h"
+#include "solution.h"
 
 int GetOpts(int argc, char** argv, kOpts* option, char** paths) {
     if (argc != 4 && argc != 5) {

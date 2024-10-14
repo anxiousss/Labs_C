@@ -9,7 +9,6 @@ int len(const char* str) {
     return i;
 }
 
-
 int base_conversion(int number, char* result, int based) {
     if (based < 2 || based > 36) {
         result[0] = '\0';
@@ -83,7 +82,6 @@ int insert_symbol(WordsBuffer* buffer, char c) {
         return Memory_leak;
 
     int last_i = buffer->size - 1;
-
     char* last_word = buffer->words[last_i];
     int len = buffer->word_sizes[last_i];
     int capacity = buffer->word_capacities[last_i];
@@ -134,25 +132,23 @@ int insert_word(WordsBuffer* buffer) {
     buffer->size++;
     return 0;
 }
-
 int split_by_words(WordsBuffer* buffer, FILE* file) {
     if (buffer == NULL || file == NULL)
         return Memory_leak;
 
-    char c;
+    char c, last_c = 0;
     int err;
     while ((c = fgetc(file)) != EOF) {
-        if (c == ' ' || c == '\n' || c == '\t') {
-            if (buffer->size > 0) {
+        if ((c == ' ' || c == '\n' || c == '\t') && (last_c != ' ' && last_c != '\n' && last_c != '\t')) {
+            if (buffer->size > 0 && buffer->word_sizes[buffer->size - 1] > 0) {
                 err = insert_symbol(buffer, '\0');
                 if (err == Memory_leak)
                     return err;
-
             }
             err = insert_word(buffer);
             if (err == Memory_leak)
                 return err;
-        } else {
+        } else if(c != ' ' && c != '\n' && c != '\t') {
             if (buffer->size == 0) {
                 err = insert_word(buffer);
                 if (err == Memory_leak)
@@ -162,14 +158,17 @@ int split_by_words(WordsBuffer* buffer, FILE* file) {
             if (err == Memory_leak)
                 return err;
         }
+        last_c = c;
     }
 
-    if (buffer->size > 0) {
+    if (buffer->size > 0 && buffer->word_sizes[buffer->size - 1] > 0) {
         insert_symbol(buffer, '\0');
     }
 
     return 0;
 }
+
+
 int HandlerOptR(char** paths) {
     if (strcmp(paths[0], paths[1]) == 0) {
         return Equal_paths;
@@ -200,19 +199,16 @@ int HandlerOptR(char** paths) {
         return Memory_leak;
     }
 
-    int n_words1 = words_buffer1->size;
-    int n_words2 = words_buffer2->size;
+    int n_words1 = words_buffer1->size - 1;
+    int n_words2 = words_buffer2->size - 1;
 
     int max_words = n_words1 > n_words2 ? n_words1 : n_words2;
 
     for (int i = 0; i < max_words; ++i) {
 
         if (i < n_words1 && i < n_words2) {
-            if (i % 2 == 0) {
-                fprintf(out, "%s ", words_buffer1->words[i]);
-            } else {
-                fprintf(out, "%s ", words_buffer2->words[i]);
-            }
+            fprintf(out, "%s ", words_buffer1->words[i]);
+            fprintf(out, "%s ", words_buffer2->words[i]);
         }
         else if (i < n_words1) {
             fprintf(out, "%s ",words_buffer1->words[i]);
@@ -259,7 +255,7 @@ int HandlerOptA(char** paths) {
     
     // logic
 
-    for (int i = 0; i < words_buffer1->size; ++i) {
+    for (int i = 0; i < words_buffer1->size - 1; ++i) {
         if (i % 10 == 9) {
             for (int j = 0; words_buffer1->words[i][j] != '\0'; ++j) {
                 if (words_buffer1->words[i][j] >= 'A' && words_buffer1->words[i][j] <= 'Z')

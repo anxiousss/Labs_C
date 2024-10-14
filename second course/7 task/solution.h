@@ -47,4 +47,4 @@ int split_by_words(WordsBuffer* buffer, FILE* file);
 void free_buffer(WordsBuffer* buffer);
 
 
-#endif //SOLUTION_H~
+#endif //SOLUTION_H
