@@ -37,7 +37,7 @@ int insert_symbol(WordsBuffer* buffer, char c);
 
 int insert_word(WordsBuffer* buffer);
 
-int split_by_words(WordsBuffer* buffer, FILE* file);
+int split_by_words(WordsBuffer* buffer, FILE* file, int* size   );
 
 void free_buffer(WordsBuffer* buffer);
 

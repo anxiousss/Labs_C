@@ -200,7 +200,7 @@ int insert_word(WordsBuffer* buffer) {
     return 0;
 }
 
-int split_by_words(WordsBuffer* buffer, FILE* file) {
+int split_by_words(WordsBuffer* buffer, FILE* file, int* size) {
     if (buffer == NULL || file == NULL)
         return Memory_leak;
 
@@ -230,6 +230,13 @@ int split_by_words(WordsBuffer* buffer, FILE* file) {
         last_c = c;
     }
 
+    if (last_c >= ' ') {
+        *size = buffer->size;
+    } else {
+        *size = buffer->size - 1;
+    }
+
+
     if (buffer->size > 0) {
         insert_symbol(buffer, '\0');
     }
@@ -242,7 +249,8 @@ int solution(FILE** in, FILE** out) {
     if (wordsBuffer == NULL) {
         return Memory_leak;
     }
-    int res1 = split_by_words(wordsBuffer, *in);
+    int border;
+    int res1 = split_by_words(wordsBuffer, *in, &border);
     if (res1 != 0){
         free_buffer(wordsBuffer);
         return Memory_leak;
@@ -251,12 +259,7 @@ int solution(FILE** in, FILE** out) {
     // logic
     char* number;
     char* convert_number;
-    int min_base, border;
-
-    if (wordsBuffer->size == 1)
-        border = 1;
-    else
-        border = wordsBuffer->size;
+    int min_base;
 
     for (int i = 0; i < border; ++i) {
         number = (char*) malloc(sizeof(char) * (wordsBuffer->word_sizes[i] + 1));
@@ -273,6 +276,9 @@ int solution(FILE** in, FILE** out) {
         }
         remove_leading_zeros(wordsBuffer->words[i], number);
         min_base = find_min_base(number);
+        if (strcmp(number, "") == 0)
+            break;
+
         int tmp = convert_to_decimal(number, min_base, convert_number);
         if (tmp) {
             free(number);
