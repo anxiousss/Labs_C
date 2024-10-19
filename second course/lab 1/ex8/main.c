@@ -4,8 +4,16 @@ int main(int argc, char** argv) {
     if (argc != 3)
         return Invalid_input;
 
+    if (check_file_names(argv[1], argv[2])) {
+        printf("Equal Path");
+        return Equal_paths;
+    }
+
     FILE* in = fopen(argv[1], "r");
     FILE* out = fopen(argv[2], "w");
+
+
+
     if (!in || !out) {
         if (!in) fclose(in);
         if (!out) fclose(out);
@@ -19,9 +27,6 @@ int main(int argc, char** argv) {
             return res;
         case Memory_leak:
             printf("Memory leak\n");
-            return res;
-        case Equal_paths:
-            printf("Equal Paths");
             return res;
         default:
             return res;

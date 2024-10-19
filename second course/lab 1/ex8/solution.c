@@ -43,16 +43,14 @@ int convert_to_decimal(const char *number, int base, char* convert_number) {
     int length = len(number);
     long long decimal = 0;
     int digit;
-    int sign = 1; // По умолчанию число положительное
+    int sign = 1;
     int i = 0;
 
-    // Проверка на отрицательное число
     if (number[0] == '-') {
         sign = -1;
         i++;
     }
 
-    // Пропуск ведущих нулей
     while (i < length && number[i] == '0') {
         i++;
     }
@@ -76,12 +74,40 @@ int convert_to_decimal(const char *number, int base, char* convert_number) {
         decimal = decimal * base + digit;
     }
 
-    // Учитываем знак числа
     decimal *= sign;
 
     sprintf(convert_number, "%lld", decimal);
     return 0;
 }
+
+void remove_leading_zeros(const char* number, char* result) {
+    int length = len(number);
+    int i = 0;
+    int is_negative = 0;
+
+    if (number[0] == '-') {
+        is_negative = 1;
+        i++;
+    }
+    while (i < length && number[i] == '0') {
+        i++;
+    }
+
+    if (i == length) {
+        if (is_negative) {
+            strcpy(result, "-0");
+        } else {
+            strcpy(result, "0");
+        }
+        return;
+    }
+
+    if (is_negative) {
+        result[0] = '-';
+        strcpy(result + 1, number + i);
+    } else {
+        strcpy(result, number + i);
+    }}
 
 void free_buffer(WordsBuffer* buffer) {
     if (buffer == NULL)
@@ -225,8 +251,14 @@ int solution(FILE** in, FILE** out) {
     // logic
     char* number;
     char* convert_number;
-    int min_base;
-    for (int i = 0; i < wordsBuffer->size - 1; ++i) {
+    int min_base, border;
+
+    if (wordsBuffer->size == 1)
+        border = 1;
+    else
+        border = wordsBuffer->size;
+
+    for (int i = 0; i < border; ++i) {
         number = (char*) malloc(sizeof(char) * (wordsBuffer->word_sizes[i] + 1));
         if (number == NULL) {
             free_buffer(wordsBuffer);
@@ -239,8 +271,7 @@ int solution(FILE** in, FILE** out) {
             free_buffer(wordsBuffer);
             return Memory_leak;
         }
-
-        strcpy(number, wordsBuffer->words[i]);
+        remove_leading_zeros(wordsBuffer->words[i], number);
         min_base = find_min_base(number);
         int tmp = convert_to_decimal(number, min_base, convert_number);
         if (tmp) {
@@ -256,5 +287,26 @@ int solution(FILE** in, FILE** out) {
     free_buffer(wordsBuffer);
     fclose(*in);
     fclose(*out);
+    return 0;
+}
+
+
+int check_file_names(const char *file1, const char *file2) {
+    const char * name1 = strrchr(file1,'\\');
+    const char * name2 = strrchr(file2,'\\');
+    if (name1 != NULL) {
+        name1++;
+    } else {
+        name1 = file1;
+    }
+    if (name2 != NULL) {
+        name2++;
+    } else {
+        name2 = file2;
+    }
+
+    if (strcmp(name1, name2) == 0) {
+        return 1;
+    }
     return 0;
 }
