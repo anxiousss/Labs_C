@@ -8,98 +8,112 @@ int len(const char* str) {
     return i;
 }
 
-int my_strncmp(const char *str1, const char *str2, size_t n) {
-    for (size_t i = 0; i < n; i++) {
-        if (str1[i] != str2[i] || str1[i] == '\0' || str2[i] == '\0') {
-            return str1[i] - str2[i];
-        }
-    }
-    return 0;
-}
-
-int line_break_count(const char* str) {
-    int c = 0;
-    for (int i = 0; str[i] != '\0'; ++i) {
-        if (str[i] == '\n')
-            ++c;
-    }
-    return c;
-}
-
-int find(int* string_numerous, int* char_numerous, const char* sub, FILE* fin, int* rep) {
-    int l = len(sub);
-    int char_index = 0, string_index = 1, line_breaks = line_break_count(sub), sub_start = 0, index = 0;
-    char buffer[l + 1];
-    char ch;
+void remove_leading_zeros(const char* number, char* result) {
+    int length = len(number);
     int i = 0;
+    int is_negative = 0;
 
-    while ((ch = fgetc(fin)) != EOF) {
-        buffer[i] = ch;
+    if (number[0] == '-') {
+        is_negative = 1;
         i++;
-
-        ++char_index;
-        sub_start = char_index;
-        if (ch == '\n') {
-            ++string_index;
-            char_index = line_breaks > 0 ? sub_start : 1;
-        }
-
-        if (i == l) {
-            buffer[i] = '\0';
-            if (my_strncmp(sub, buffer, l) == 0) {
-                string_numerous[index] = string_index - line_breaks;
-                char_numerous[index] = (line_breaks > 0 ? sub_start + 1 : char_index) - l ;
-                ++index;
-            }
-
-            for (int j = 0; j < l - 1; j++) {
-                    buffer[j] = buffer[j + 1];
-            }
-            i--;
-        }
     }
-    *rep = index;
+    while (i < length && number[i] == '0') {
+        i++;
+    }
+
+    if (i == length) {
+        if (is_negative) {
+            strcpy(result, "-0");
+        } else {
+            strcpy(result, "0");
+        }
+        return;
+    }
+
+    if (is_negative) {
+        result[0] = '-';
+        strcpy(result + 1, number + i);
+    } else {
+        strcpy(result, number + i);
+    }
+}
+
+char get_char(int digit) {
+    if (digit < 10) {
+        return '0' + digit;
+    } else {
+        return 'A' + digit - 10;
+    }
+}
+
+int get_digit(char c) {
+    if (c >= '0' && c <= '9') {
+        return c - '0';
+    } else if (c >= 'A' && c <= 'Z') {
+        return c - 'A' + 10;
+    } else {
+        return Invalid_input;
+    }
+}
+
+int addition(int base, char* a, char* b, char* result) {
+    char* a_no_zeros = (char*)(malloc(sizeof(char) * (len(a) + 2)));
+    char* b_no_zeros = (char*)(malloc(sizeof(char) * (len(b) + 2)));
+    if (!a_no_zeros) {
+        return Memory_leak;
+    }
+
+    if (!b_no_zeros) {
+        free(a_no_zeros);
+        return Memory_leak;
+    }
+
+    remove_leading_zeros(a, a_no_zeros);
+    remove_leading_zeros(b, b_no_zeros);
+    int len_a = len(a_no_zeros);
+    int len_b = len(b_no_zeros);
+    int max_len = len_a > len_b ? len_a : len_b;
+    int carry = 0;
+
+    result[max_len + 1] = '\0';
+
+    for (int i = 0; i < max_len; i++) {
+        int digit_a = (i < len_a) ? get_digit(a_no_zeros[len_a - 1 - i]) : 0;
+        int digit_b = (i < len_b) ? get_digit(b_no_zeros[len_b - 1 - i]) : 0;
+        int sum = digit_a + digit_b + carry;
+        carry = sum / base;
+        result[max_len - i] = get_char(sum % base);
+    }
+    free(a_no_zeros);
+    free(b_no_zeros);
+    if (carry > 0) {
+        result[0] = get_char(carry);
+    } else {
+        memmove(result, result + 1, max_len + 1);
+    }
     return 0;
 }
 
-
-
-int find_sub_files(char*** result, const char* substr, int* reps , ...) {
-    va_list paths;
-    va_start(paths, reps);
-    char* file = va_arg(paths, char*);
-    int last = 0;
-    while (file != NULL) {
-
-        int* string_numerous = (int*)(malloc(sizeof(int) * 1024));
-        if (!string_numerous)
-            return Memory_leak;
-        int* char_numerous = (int*)(malloc(sizeof(int) * 1024));
-        if (!char_numerous) {
-            free(string_numerous);
-            return Memory_leak;
-        }
-        FILE* fin = fopen(file, "r");
-        if (!fin) {
-            fclose(fin);
-            return Memory_leak;
-        }
-        int rep = 0;
-        find(string_numerous, char_numerous, substr, fin, &rep);
-        *result = (char**)(realloc(*result, sizeof(char*) * rep));
-        for (int i = last; i < rep + last; ++i) {
-            char buffer[128];
-            snprintf(buffer, sizeof(buffer), "FILE %s, string %d, symbol %d", file, string_numerous[i - last], char_numerous[i - last]);
-            (*result)[i] = strdup(buffer);
-        }
-        last += rep;
-
-        file = va_arg(paths, char*);
-        free(string_numerous);
-        free(char_numerous);
-        fclose(fin);
+int sum(int base, int n, char** result, ...) {
+    va_list numbers;
+    va_start(numbers, result);
+    char* number = va_arg(numbers, char*);
+    char* start = (char*)(malloc(sizeof(char) * 100));
+    if (!start) {
+        return Memory_leak;
     }
-    *reps = last;
-    va_end(paths);
+    strcpy(start, "0");
+
+    for (int i = 0; i < n; ++i) {
+        int err = addition(base, start, number, *result);
+        if (err) {
+            free(start);
+            return err;
+        }
+        number = va_arg(numbers, char*);
+        strcpy(start, *result);
+    }
+    free(start);
+    va_end(numbers);
     return 0;
 }
