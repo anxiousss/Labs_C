@@ -3,9 +3,9 @@
 #define SOLUTION_H
 
 #include <stdio.h>
-#include <string.h>
-#include <stdarg.h>
 #include <stdlib.h>
+#include <stdarg.h>
+#include <string.h>
 
 typedef enum Errors {
     Invalid_input = 2,
@@ -13,14 +13,37 @@ typedef enum Errors {
 } Errors;
 
 
-int len(const char*);
+struct Search {
+    int num_line;
+    int num_char;
+    int pos;
+};
 
-int my_strncmp(const char *str1, const char *str2, size_t n);
+typedef struct Search Search;
 
-int line_break_count(const char* str);
+struct Vector {
+    Search* data;
+    int capacity;
+    int size;
+};
 
-int find(int* string_numer, int* char_numer, const char* sub, FILE* fin, int* rep);
+typedef struct Vector Vector;
 
-int find_sub_files(char*** result, const char* substr, int* reps , ...);
+int len(const char* str);
+
+Vector* init_vector(int size);
+
+void free_vector(Vector* v);
+
+void push(Vector* v, Search search);
+
+void update(Vector* v, const char* sub, int ch);
+
+void check_search(Vector* v, int len, char*** result, char* file);
+
+int find(char*** result, char* file, const char* sub);
+
+int find_sub_files(char*** result, const char* substr, ...);
+
 
 #endif //SOLUTION_H

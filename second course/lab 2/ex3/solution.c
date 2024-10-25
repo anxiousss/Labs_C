@@ -8,112 +8,131 @@ int len(const char* str) {
     return i;
 }
 
-void remove_leading_zeros(const char* number, char* result) {
-    int length = len(number);
-    int i = 0;
-    int is_negative = 0;
-
-    if (number[0] == '-') {
-        is_negative = 1;
-        i++;
+Vector* init_vector(int size) {
+    Vector* vector = (Vector*)malloc(sizeof(Vector));
+    if (!vector)
+        return NULL;
+    vector->size = 0;
+    vector->capacity = size;
+    vector->data = (Search*)malloc(sizeof(Search) * size);
+    if (!vector->data) {
+        free(vector);
+        return NULL;
     }
-    while (i < length && number[i] == '0') {
-        i++;
-    }
 
-    if (i == length) {
-        if (is_negative) {
-            strcpy(result, "-0");
-        } else {
-            strcpy(result, "0");
+    return vector;
+}
+
+void free_vector(Vector* v) {
+    if (v) {
+        if (v->data) {
+            free(v->data);
         }
-        return;
-    }
-
-    if (is_negative) {
-        result[0] = '-';
-        strcpy(result + 1, number + i);
-    } else {
-        strcpy(result, number + i);
+        free(v);
     }
 }
 
-char get_char(int digit) {
-    if (digit < 10) {
-        return '0' + digit;
-    } else {
-        return 'A' + digit - 10;
+void push(Vector* v, Search search) {
+    if (v->size == v->capacity) {
+        v->capacity *= 2;
+        Search* old = v->data;
+        v->data = (Search*)malloc(sizeof(Search) * v->capacity);
+        if (!v->data) {
+            free(old);
+            return;
+        }
+        for (int i = 0; i < v->size; i++)
+            v->data[i] = old[i];
+        free(old);
+    }
+
+    v->data[v->size] = search;
+    v->size++;
+}
+
+void update(Vector* v, const char* sub, int ch) {
+    for (int i = 0; i < v->size; i++) {
+        int j = v->data[i].pos;
+        if (sub[j] == ch) {
+            v->data[i].pos++;
+        } else {
+            v->data[i].pos = -1;
+        }
     }
 }
 
-int get_digit(char c) {
-    if (c >= '0' && c <= '9') {
-        return c - '0';
-    } else if (c >= 'A' && c <= 'Z') {
-        return c - 'A' + 10;
-    } else {
-        return Invalid_input;
+void check_search(Vector* v, int len, char*** result, char* file) {
+    int pos = 0;
+    for (int i = 0; i < v->size; i++) {
+        if (v->data[i].pos == len) {
+            char buffer[100];
+            snprintf(buffer, sizeof(buffer), "FILE %s Line number: %3d, char number: %3d\n", file, v->data[i].num_line, v->data[i].num_char);
+            (*result) = (char**)realloc(*result, (pos + 1) * sizeof(char*));
+            if (!(*result)) {
+                return;
+            }
+            (*result)[pos] = strdup(buffer);
+            if (!(*result)[pos]) {
+                return;
+            }
+            pos++;
+        } else if (v->data[i].pos != -1) {
+            v->data[pos] = v->data[i];
+            pos++;
+        }
     }
+    v->size = pos;
 }
 
-int addition(int base, char* a, char* b, char* result) {
-    char* a_no_zeros = (char*)(malloc(sizeof(char) * (len(a) + 2)));
-    char* b_no_zeros = (char*)(malloc(sizeof(char) * (len(b) + 2)));
-    if (!a_no_zeros) {
+int find(char*** result, char* file, const char* sub) {
+    Vector* v = init_vector(10);
+    if (!v) {
         return Memory_leak;
     }
 
-    if (!b_no_zeros) {
-        free(a_no_zeros);
+    int l = len(sub);
+    int num_char = 0, num_line = 1;
+
+    int ch;
+    FILE* fin = fopen(file, "r");
+    if (!fin) {
+        free_vector(v);
         return Memory_leak;
     }
 
-    remove_leading_zeros(a, a_no_zeros);
-    remove_leading_zeros(b, b_no_zeros);
-    int len_a = len(a_no_zeros);
-    int len_b = len(b_no_zeros);
-    int max_len = len_a > len_b ? len_a : len_b;
-    int carry = 0;
+    while ((ch = fgetc(fin)) != EOF) {
+        num_char++;
 
-    result[max_len + 1] = '\0';
+        if (ch == sub[0]) {
+            Search search = {num_line, num_char, 0};
+            push(v, search);
+        }
 
-    for (int i = 0; i < max_len; i++) {
-        int digit_a = (i < len_a) ? get_digit(a_no_zeros[len_a - 1 - i]) : 0;
-        int digit_b = (i < len_b) ? get_digit(b_no_zeros[len_b - 1 - i]) : 0;
-        int sum = digit_a + digit_b + carry;
-        carry = sum / base;
-        result[max_len - i] = get_char(sum % base);
+        update(v, sub, ch);
+        check_search(v, l, result, file);
+
+        if (ch == '\n') {
+            num_line++;
+            num_char = 0;
+        }
     }
-    free(a_no_zeros);
-    free(b_no_zeros);
-    if (carry > 0) {
-        result[0] = get_char(carry);
-    } else {
-        memmove(result, result + 1, max_len + 1);
-    }
+
+    free_vector(v);
+    fclose(fin);
     return 0;
 }
 
-int sum(int base, int n, char** result, ...) {
-    va_list numbers;
-    va_start(numbers, result);
-    char* number = va_arg(numbers, char*);
-    char* start = (char*)(malloc(sizeof(char) * 100));
-    if (!start) {
-        return Memory_leak;
-    }
-    strcpy(start, "0");
-
-    for (int i = 0; i < n; ++i) {
-        int err = addition(base, start, number, *result);
+int find_sub_files(char*** result, const char* substr, ...) {
+    va_list files;
+    va_start(files, substr);
+    char* K = va_arg(files, char*);
+    while (K != NULL) {
+        int err = find(result, K, substr);
         if (err) {
-            free(start);
             return err;
         }
-        number = va_arg(numbers, char*);
-        strcpy(start, *result);
+        K = va_arg(files, char*);
     }
-    free(start);
-    va_end(numbers);
+    va_end(files);
     return 0;
 }
