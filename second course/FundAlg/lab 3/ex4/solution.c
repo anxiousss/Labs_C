@@ -46,32 +46,64 @@ int days_in_month(int month, int year) {
     return days[month - 1];
 }
 
-long long seconds_since_epoch(Time* t) {
+            long long seconds_since_epoch(Time* t) {
     long long seconds = 0;
 
-    // Считаем количество секунд в годах
     for (int y = 1970; y < t->year; y++) {
         seconds += is_leap_year(y) ? 366 * 86400 : 365 * 86400;
     }
 
-    // Считаем количество секунд в месяцах
     for (int m = 1; m < t->month; m++) {
         seconds += days_in_month(m, t->year) * 86400;
     }
 
-    // Считаем количество секунд в днях
     seconds += (t->day - 1) * 86400;
 
-    // Считаем количество секунд в часах
     seconds += t->hour * 3600;
 
-    // Считаем количество секунд в минутах
     seconds += t->minute * 60;
 
-    // Считаем количество секунд
     seconds += t->second;
 
     return seconds;
+}
+
+
+int read_line(char **result) {
+    int buffer_size = 16;
+    int length = 0;
+    char *buffer = malloc(buffer_size);
+
+    if (!buffer) {
+        return Memory_leak;
+    }
+
+    int ch;
+    while ((ch = fgetc(stdin)) != ' ' && ch != EOF) {
+        if (length + 1 >= buffer_size) {
+            buffer_size *= 2;
+            char *new_buffer = realloc(buffer, buffer_size);
+
+            if (!new_buffer) {
+                free(buffer);
+                return Memory_leak;
+            }
+
+            buffer = new_buffer;
+        }
+
+        buffer[length++] = ch;
+    }
+
+    buffer[length] = '\0';
+
+    *result = buffer;
+
+    if (ch != '\n' && ch != EOF) {
+        while ((ch = fgetc(stdin)) != '\n' && ch != EOF);
+    }
+
+    return 0;
 }
 
 
@@ -164,6 +196,7 @@ int init_post(Post** post, Address* address, Mail** mails, int length, int capac
     (*post)->mails = mails;
     (*post)->length = length;
     (*post)->capacity = capacity;
+    return 0;
 }
 
 int delete_post(Post* post) {
@@ -186,7 +219,7 @@ int resize_post(Post* post, int size) {
     return 0;
 }
 
-int add_post(Mail** mail, Post* post) {
+int add_mail(Mail** mail, Post* post) {
     if (post->capacity == post->length) {
         post->length *= 2;
         int err = resize_post(post, post->length);
@@ -194,6 +227,36 @@ int add_post(Mail** mail, Post* post) {
             return err;
     }
     post->mails[post->capacity] = *mail;
+    return 0;
+}
+
+int remove_mail(Mail** mail, Post* post) {
+    if (post == NULL || mail == NULL || post->mails == NULL) {
+        return -1;
+    }
+
+    int found = 0;
+    int i;
+
+    for (i = 0; i < post->capacity; i++) {
+        if (post->mails[i] == *mail) {
+            found = 1;
+            break;
+        }
+    }
+
+    if (!found) {
+        return -1;
+    }
+
+    free(post->mails[i]);
+
+    for (int j = i; j < post->capacity - 1; j++) {
+        post->mails[j] = post->mails[j + 1];
+    }
+
+    post->capacity--;
+
     return 0;
 }
 

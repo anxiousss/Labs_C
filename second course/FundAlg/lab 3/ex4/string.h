@@ -13,7 +13,8 @@ typedef struct String {
 } String;
 
 typedef enum Errors {
-    Memory_leak = 3
+    Invalid_input = 2,
+    Memory_leak
 } Errors;
 
 int len(const char* str);
