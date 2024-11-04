@@ -1,7 +1,7 @@
 #include "solution.h"
 
 void print_menu() {
-    printf("1 - HELP\n 2 - ADD\n 3 - REMOVE\n 4 - PRINT\n 5 - SEARCH\n 6 - EXIT");
+    printf("1 - HELP\n2 - ADD\n3 - REMOVE\n4 - PRINT\n5 - SEARCH\n6 - EXIT\n");
 }
 
 void print_help() {
@@ -100,11 +100,11 @@ int read_init_mail(Mail* mail, Address* address, String* city, String* street, u
 
 void print_mails(Post* post) {
     if (post == NULL || post->mails == NULL) {
-        printf("Ошибка: некорректные входные данные\n");
+        printf("Invalid input\n");
         return;
     }
 
-    printf("Список почтовых отправлений:\n");
+    printf("LIST OF MAILS:\n");
     for (int i = 0; i < post->length; i++) {
         Mail* mail = post->mails[i];
         printf("Mail ID: %s\n", mail->id.mas);
@@ -131,7 +131,7 @@ int handle_choice(int choice, int* flag, Post* post) {
     switch (choice) {
         case HELP:
             print_help();
-            break;
+            return 0;
         case ADD:
             if (*flag == 0) {
                 Address* post_address;
@@ -153,8 +153,7 @@ int handle_choice(int choice, int* flag, Post* post) {
             err = add_mail(&mail, post);
             if (err)    
                 return err;
-            break;
-
+            return 0;
         case REMOVE:
             err = read_init_mail(mail, address, &city, &street, &house, &building, &apartment, &post_index, &weight, &id, &creation_date, &delivery_date);
             if (err)
@@ -162,25 +161,42 @@ int handle_choice(int choice, int* flag, Post* post) {
             err = remove_mail(&mail, post);
             if (err)
                 return err;
-            break;
+            return 0;
         case PRINT:
             sort_mails(post);
             print_mails(post);
-            break;
-        default:
-            return Invalid_input;
+            return 0;
+        case SEARCH:
+            err = read_init_mail(mail, address, &city, &street, &house, &building, &apartment, &post_index, &weight, &id, &creation_date, &delivery_date);
+            if (err)
+                return err;
+            int index = 0;
+            err = search_mail(mail, post, &index);
+            if (err) {
+                printf("Not found\n");
+                return 0;
+            }
+            printf("Found\n");
+            return 0;
+        case EXIT:
+            printf("DIALOG IS ENDED\n");
+            *flag = -1;
+            return 0;
+            default:
+                return Invalid_input;
     }
-    return 0;
 }
 
 int dialog_manager() {
-    Post* post;
+    Post *post;
     int err = init_post(&post, NULL, NULL, 0, 0);
     if (err)
         return Memory_leak;
     int flag = 0;
+    print_menu();
     while (1) {
-        print_menu();
+        if (flag == -1)
+            return 0;
         int choice;
         err = read_choice(&choice);
         if (err)
