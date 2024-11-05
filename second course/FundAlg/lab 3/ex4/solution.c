@@ -142,7 +142,6 @@ int init_post(Post** post, int length, int capacity) {
         free((*post)->address);
         return Memory_leak;
     }
-
     return 0;
 }
 
@@ -166,15 +165,15 @@ int resize_post(Post* post, int size) {
     return 0;
 }
 
-int add_mail(Mail** mail, Post* post) {
+int add_mail(Mail* mail, Post* post) {
     if (post->capacity == post->length) {
-        post->length *= 2;
-        int err = resize_post(post, post->length);
+        post->capacity *= 2;
+        int err = resize_post(post, post->capacity);
         if (err)
             return err;
     }
-    post->mails[post->capacity] = *mail;
-    post->capacity++;
+    post->mails[post->length] = mail;
+    ++(post->length);
     return 0;
 }
 
@@ -407,7 +406,7 @@ int read_weight(float *weight)
     int error_code = 0;
     char end;
 
-    printf("Введите вес посылки: ");
+    printf("Weight: ");
     if (scanf("%f%c", weight, &end) != 2)
     {
         error_code = Invalid_input;
@@ -424,12 +423,11 @@ int read_weight(float *weight)
     return error_code;
 }
 
-int read_delivery_time(String *delivery_time)
+int read_time(String *delivery_time)
 {
     char *tmp = NULL;
     int error_code = 0;
 
-    printf("Введите дату доставки: ");
     error_code = read_line(&tmp);
 
     if (error_code == 0)
@@ -446,7 +444,7 @@ int read_mail(Mail *mail)
 
     error_code = read_address(&mail->address);
 
-    printf("Ввод информации о посылке\n");
+    printf("Parcels\n");
     if (error_code == 0)
     {
         error_code = read_weight(&mail->weight);
@@ -454,7 +452,14 @@ int read_mail(Mail *mail)
 
     if (error_code == 0)
     {
-        error_code = read_delivery_time(&mail->delivery_date);
+        printf("CREATION TIME: ");
+        error_code = read_time(&mail->creation_date);
+    }
+
+    if (error_code == 0)
+    {
+        printf("DELIVERY TIME:");
+        error_code = read_time(&mail->delivery_date);
     }
 
     return error_code;

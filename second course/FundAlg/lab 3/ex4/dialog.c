@@ -42,9 +42,9 @@ void print_mails(Post* post) {
 
 
 int handle_choice(int choice, int* flag, Post* post) {
-    Mail* mail = NULL;
 
     int err;
+    Mail* tmp;
     switch (choice) {
         case HELP:
             print_help();
@@ -56,25 +56,40 @@ int handle_choice(int choice, int* flag, Post* post) {
                     return err;
                 *flag = 1;
             }
-            err = read_mail(mail);
+            tmp = (Mail*)(malloc(sizeof(Mail)));
+            if (!tmp)
+                return Memory_leak;
+            err = read_mail(tmp);
             if (err)
                 return err;
-            err = add_mail(&mail, post);
+            err = add_mail(tmp, post);
             if (err)
                 return err;
             return 0;
         case REMOVE:
-            err = remove_mail(&mail, post);
+            tmp = (Mail*)(malloc(sizeof(Mail)));
+            if (!tmp)
+                return Memory_leak;
+            err = read_mail(tmp);
+            if (err)
+                return err;
+            err = remove_mail(&tmp, post);
             if (err)
                 return err;
             return 0;
         case PRINT:
-            sort_mails(post);
+            //sort_mails(post);
             print_mails(post);
             return 0;
         case SEARCH:
             int index = 0;
-            err = search_mail(mail, post, &index);
+            tmp = (Mail*)(malloc(sizeof(Mail)));
+            if (!tmp)
+                return Memory_leak;
+            err = read_mail(tmp);
+            if (err)
+                return err;
+            err = search_mail(tmp, post, &index);
             if (err) {
                 printf("Not found\n");
                 return 0;
@@ -92,7 +107,7 @@ int handle_choice(int choice, int* flag, Post* post) {
 
 int dialog_manager() {
     Post *post;
-    int err = init_post(&post, 0, 0);
+    int err = init_post(&post, 0, 2);
     if (err)
         return Memory_leak;
     int flag = 0;

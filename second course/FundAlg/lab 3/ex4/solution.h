@@ -67,7 +67,7 @@ int delete_post(Post* post);
 
 int resize_post(Post* post, int size);
 
-int add_mail(Mail** mail, Post* post);
+int add_mail(Mail* mail, Post* post);
 
 int remove_mail(Mail** mail, Post* post);
 
@@ -95,7 +95,7 @@ void print_help();
 
 int read_choice(int* choice);
 
-int handle_choice(int choice, int* flag , Post* post);
+int handle_choice(int choice, int* flag , Post* post );
 
 int read_city(String *city);
 
