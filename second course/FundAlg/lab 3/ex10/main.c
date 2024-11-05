@@ -11,6 +11,11 @@ int main(int argc, char** argv) {
     strcpy(in_path, argv[1]);
     strcpy(out_path, argv[2]);
 
+    if (check_file_names(in_path, out_path)) {
+        printf("Equal Paths");
+        return Equal_Paths;
+    }
+
 
     FILE* in = fopen(in_path, "r");
     FILE* out = fopen(out_path, "w");
@@ -24,16 +29,16 @@ int main(int argc, char** argv) {
     Node* root;
     char* expression;
     while ((expression = readLineFromFile(in)) != NULL) {
-        int index = 0;
-        root = build_tree(expression, &index);
+        root = build_tree(expression);
         if (!root) {
             printf("Memory leak");
             destroy(root);
+            free(expression);
+
             return Memory_leak;
         }
-        printTree(out, root, 0);
+        print_tree(root,out, 0);
         fprintf(out, "-------------------------------------------------\n");
-
         free(expression);
         destroy(root);
     }

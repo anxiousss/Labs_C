@@ -5,30 +5,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <limits.h>
 
 typedef enum Errors {
     Invalid_input = 2,
-    Memory_leak
+    Memory_leak,
+    Equal_Paths
 } Errors;
 
 typedef struct Node {
-    char* value;
-    struct Node** mas;
-    int size;
-    int capacity;
+    char value;
+    struct Node* children;
+    struct Node* next;
 } Node;
 
+int check_file_names(const char *file1, const char *file2);
 
+Node* create_node(char value);
 
-Node* init(char* value);
+void add_child(Node* parent, Node* child);
 
-int addChild(Node* parent, Node* child);
-
-Node* build_tree(char* str, int* index);
+Node* build_tree(const char* expression);
 
 void destroy(Node* root);
 
-void printTree(FILE* fin, Node* root, int level);
+void print_tree(Node* root, FILE* file, int depth);
 
 char* readLineFromFile(FILE* file);
 

@@ -1,103 +1,90 @@
 #include "solution.h"
 
-Node* init(char* value) {
-    Node* root = (Node*)malloc(sizeof(Node));
-    if (!root)
+
+Node* create_node(char value) {
+    Node* node = (Node*)malloc(sizeof(Node));
+    if (!node)
         return NULL;
-    root->mas = NULL;
-    root->value = strdup(value);
-    if (!root->value) {
-        free(root);
-        return NULL;
-    }
-    root->size = 0;
-    root->capacity = 0;
-    return root;
+    node->value = value;
+    node->children = NULL;
+    node->next = NULL;
+    return node;
 }
 
-int addChild(Node* parent, Node* child) {
-    if (parent->size >= parent->capacity) {
-        parent->capacity = (parent->capacity == 0) ? 1 : parent->capacity * 2;
-        parent->mas = (Node**)realloc(parent->mas, parent->capacity * sizeof(Node *));
-        if (parent->mas == NULL) {
-            return Memory_leak;
+void add_child(Node* parent, Node* child) {
+    if (parent->children == NULL) {
+        parent->children = child;
+    } else {
+        Node* sibling = parent->children;
+        while (sibling->next != NULL) {
+            sibling = sibling->next;
         }
+        sibling->next = child;
     }
-    parent->mas[parent->size++] = child;
-    return 0;
 }
 
-Node* build_tree(char* expression, int* index) {
-    Node* root = init("");
-    if (!root)
-        return NULL;
-    char buffer[100];
-    int bufferIndex = 0;
+Node* build_tree(const char* expression) {
+    Node* stack[100];
+    int stack_top = -1;
+    Node* root = NULL;
+    Node* current_node = NULL;
+    int length = strlen(expression);
+    for (int i = 0; i < length; i++) {
+        char char_at_i = expression[i];
 
-    while (expression[*index] != '\0') {
-        if (expression[*index] == '(') {
-            (*index)++;
-            Node* child = build_tree(expression, index);
-            int err = addChild(root, child);
-            if (err)
+        if (char_at_i >= 'A' && char_at_i <= 'Z') {
+            Node* new_node = create_node(char_at_i);
+            if (!new_node) {
+                destroy(root);
                 return NULL;
-        } else if (expression[*index] == ')') {
-            (*index)++;
-            if (bufferIndex > 0) {
-                       buffer[bufferIndex] = '\0';
-                root->value = strdup(buffer);
-                if (!root->value) {
-                    destroy(root);
-                    return NULL;
-                }
             }
-            return root;
-        }
-        else {
-            buffer[bufferIndex++] = expression[*index];
-            (*index)++;
+            if (current_node == NULL) {
+                root = new_node;
+                current_node = new_node;
+            } else {
+                add_child(current_node, new_node);
+                current_node = new_node;
+            }
+        } else if (char_at_i == '(') {
+            stack[++stack_top] = current_node;
+        } else if (char_at_i == ')') {
+            current_node = stack[stack_top--];
+        } else if (char_at_i == ',') {
+            current_node = stack[stack_top];
         }
     }
 
-    if (bufferIndex > 0) {
-        buffer[bufferIndex] = '\0';
-        root->value = strdup(buffer);
-        if (!root->value) {
-            destroy(root);
-            return NULL;
-        }
-    }
     return root;
 }
 
-void destroy(Node* root) {
-    if (root == NULL)
-        return;
-
-    for (int i = 0; i < root->size; ++i) {
-        destroy(root->mas[i]);
-    }
-    if (root->mas)
-        free(root->mas);
-    if (root->value)
-        free(root->value);
-    free(root);
-}
-
-void printTree(FILE* fin, Node* root, int level) {
-    if (root == NULL) {
-        return;
-    }
+void print_tree(Node* node, FILE * fin, int level) {
+    if (node == NULL) return;
 
     for (int i = 0; i < level; i++) {
         fprintf(fin, "\t");
     }
-    fprintf(fin, "%s\n", root->value);
+    fprintf(fin, "%c\n", node->value);
 
-    for (int i = 0; i < root->size; i++) {
-        printTree(fin, root->mas[i], level + 1);
+    Node* child = node->children;
+    while (child != NULL) {
+        print_tree(child, fin, level + 1);
+        child = child->next;
     }
 }
+
+void destroy(Node* node) {
+    if (node == NULL) return;
+
+    Node* child = node->children;
+    while (child != NULL) {
+        Node* next_child = child->next;
+        destroy(child);
+        child = next_child;
+    }
+
+    free(node);
+}
+
 
 char* readLineFromFile(FILE* file) {
     char buffer[1024];
@@ -116,4 +103,24 @@ char* readLineFromFile(FILE* file) {
     }
 
     return line;
+}
+
+int check_file_names(const char *file1, const char *file2) {
+    const char * name1 = strrchr(file1,'\\');
+    const char * name2 = strrchr(file2,'\\');
+    if (name1 != NULL) {
+        name1++;
+    } else {
+        name1 = file1;
+    }
+    if (name2 != NULL) {
+        name2++;
+    } else {
+        name2 = file2;
+    }
+
+    if (strcmp(name1, name2) == 0) {
+        return Equal_Paths;
+    }
+    return 0;
 }
