@@ -43,7 +43,6 @@ void print_mails(Post* post) {
 
 int handle_choice(int choice, int* flag, Post* post) {
     Mail* mail = NULL;
-    Address* address = NULL;
 
     int err;
     switch (choice) {
@@ -93,7 +92,7 @@ int handle_choice(int choice, int* flag, Post* post) {
 
 int dialog_manager() {
     Post *post;
-    int err = init_post(&post, NULL, NULL, 0, 0);
+    int err = init_post(&post, 0, 0);
     if (err)
         return Memory_leak;
     int flag = 0;

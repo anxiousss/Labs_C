@@ -57,13 +57,11 @@ long long seconds_since_epoch(Time* t);
 
 int read_line(char **result);
 
-int init_address(Address* address);
-
 int delete_address(Address* address);
 
 int delete_mail(Mail* mail);
 
-int init_post(Post** post, Address* address, Mail** mails, int length, int capacity);
+int init_post(Post** post, int length, int capacity);
 
 int delete_post(Post* post);
 

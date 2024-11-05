@@ -107,23 +107,6 @@ int read_line(char **result) {
 }
 
 
-int init_address(Address* address) {
-   String* tmp = (String*)malloc(sizeof(String));
-   if (!tmp)
-       return Memory_leak;
-   address->city = *tmp;
-   tmp = (String*)malloc(sizeof(String));
-   if (!tmp) {
-       delete_string(&address->city);
-       return Memory_leak;
-   }
-   tmp = (String*)malloc(sizeof(String));
-   if (!tmp) {
-       delete_string(&address->city);
-
-   }
-}
-
 int delete_address(Address* address) {
     delete_string(&(address->city));
     delete_string(&(address->street));
@@ -142,15 +125,24 @@ int delete_mail(Mail* mail) {
     return 0;
 }
 
-int init_post(Post** post, Address* address, Mail** mails, int length, int capacity) {
+int init_post(Post** post, int length, int capacity) {
     (*post) = (Post*)(malloc(sizeof(Post)));
     if (!*post)
         return Memory_leak;
 
-    (*post)->address = address;
-    (*post)->mails = mails;
+    (*post)->address = (Address*)(malloc(sizeof(Address)));
+    if (!(*post)->address) {
+        return Memory_leak;
+    }
+
     (*post)->length = length;
     (*post)->capacity = capacity;
+    (*post)->mails = (Mail**)(malloc(sizeof(Mail*) * capacity));
+    if (!(*post)->mails) {
+        free((*post)->address);
+        return Memory_leak;
+    }
+
     return 0;
 }
 
@@ -295,7 +287,7 @@ int read_street(String *street)
     char *tmp = NULL;
     int error_code = 0;
 
-    printf("Введите улицу: ");
+    printf("Input street: ");
     error_code = read_line(&tmp);
 
     if (error_code == 0)
@@ -311,7 +303,7 @@ int read_house_number(unsigned int *house_number)
     int error_code = 0;
     char end;
 
-    printf("Введите номер дома: ");
+    printf("Number of house: ");
     if (scanf("%u%c", house_number, &end) != 2)
     {
         error_code = Invalid_input;
@@ -325,7 +317,7 @@ int read_building(String *building)
     char *tmp = NULL;
     int error_code = 0;
 
-    printf("Введите корпус: ");
+    printf("Building: ");
     error_code = read_line(&tmp);
 
     if (error_code == 0)
@@ -341,7 +333,7 @@ int read_apartment_number(unsigned int *apartment_number)
     int error_code = 0;
     char end;
 
-    printf("Введите номер квартиры: ");
+    printf("Apartment number: ");
     if (scanf("%d%c", apartment_number, &end) != 2)
     {
         error_code = Invalid_input;
@@ -355,7 +347,7 @@ int read_postal_code(String *postal_code)
     char *tmp = NULL;
     int error_code = 0;
 
-    printf("Введите почтовый идентификатор (6 символов): ");
+    printf("Post Index 6 symbols: ");
     error_code = read_line(&tmp);
 
     if (error_code == 0)
