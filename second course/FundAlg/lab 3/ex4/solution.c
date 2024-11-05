@@ -46,7 +46,7 @@ int days_in_month(int month, int year) {
     return days[month - 1];
 }
 
-            long long seconds_since_epoch(Time* t) {
+    long long seconds_since_epoch(Time* t) {
     long long seconds = 0;
 
     for (int y = 1970; y < t->year; y++) {
@@ -79,7 +79,7 @@ int read_line(char **result) {
     }
 
     int ch;
-    while ((ch = fgetc(stdin)) != ' ' && ch != EOF) {
+    while ((ch = fgetc(stdin)) != '\n' && ch != EOF) {
         if (length + 1 >= buffer_size) {
             buffer_size *= 2;
             char *new_buffer = realloc(buffer, buffer_size);
@@ -107,40 +107,21 @@ int read_line(char **result) {
 }
 
 
-int init_address(Address** address, String* city, String* street, unsigned int house, String* building, unsigned int apartment, String* post_index) {
-    *address = (Address*)(malloc(sizeof(Address)));
-    if (!*address)
-        return Memory_leak;
-    int err = copy_str(&(*address)->city, city);
-    if (err) {
-        free(*address);
-        return Memory_leak;
-    }
-    err = copy_str(&(*address)->street, street);
-    if (err) {
-        delete_string(&(*address)->city);
-        free(*address);
-        return Memory_leak;
-    }
-    (*address)->house = house;
-    err = copy_str(&(*address)->building, building);
-    if (err) {
-        delete_string(&(*address)->city);
-        delete_string(&(*address)->street);
-        free(*address);
+int init_address(Address* address) {
+   String* tmp = (String*)malloc(sizeof(String));
+   if (!tmp)
+       return Memory_leak;
+   address->city = *tmp;
+   tmp = (String*)malloc(sizeof(String));
+   if (!tmp) {
+       delete_string(&address->city);
+       return Memory_leak;
+   }
+   tmp = (String*)malloc(sizeof(String));
+   if (!tmp) {
+       delete_string(&address->city);
 
-        return Memory_leak;
-    }
-    (*address)->apartment = apartment;
-    err = copy_str(&(*address)->post_index, post_index);
-    if (err) {
-        delete_string(&(*address)->city);
-        delete_string(&(*address)->street);
-        delete_string(&(*address)->building);
-        free(*address);
-        return Memory_leak;
-    }
-    return 0;
+   }
 }
 
 int delete_address(Address* address) {
@@ -152,32 +133,6 @@ int delete_address(Address* address) {
     return 0;
 }
 
-int init_mail(Mail** mail, Address* address, float weight, String* id, String* creation_date, String* delivery_date) {
-    *mail = (Mail*)(malloc(sizeof(Mail)));
-    if (!*mail)
-        return Memory_leak;
-    (*mail)->address = *address;
-    (*mail)->weight = weight;
-    int err = copy_str(&(*mail)->id, id);
-    if (err) {
-        free(*mail);
-        return Memory_leak;
-    }
-    err = copy_str(&(*mail)->creation_date, creation_date);
-    if (err) {
-        delete_string(&(*mail)->id);
-        free(*mail);
-        return Memory_leak;
-    }
-    err = copy_str(&(*mail)->delivery_date, delivery_date);
-    if (err) {
-        delete_string(&(*mail)->id);
-        delete_string(&(*mail)->creation_date);
-        free(*mail);
-        return Memory_leak;
-    }
-    return 0;
-}
 
 int delete_mail(Mail* mail) {
     delete_string(&mail->id);
@@ -227,6 +182,7 @@ int add_mail(Mail** mail, Post* post) {
             return err;
     }
     post->mails[post->capacity] = *mail;
+    post->capacity++;
     return 0;
 }
 
@@ -318,3 +274,196 @@ int is_expired(Mail* mail) {
     return 0;
 }
 
+int read_city(String *city) {
+    char *tmp = NULL;
+    int error_code = 0;
+
+    printf("CITY: ");
+    error_code = read_line(&tmp);
+
+    if (error_code == 0)
+    {
+        error_code = init_string(city, tmp);
+    }
+
+    return error_code;
+}
+
+
+int read_street(String *street)
+{
+    char *tmp = NULL;
+    int error_code = 0;
+
+    printf("Введите улицу: ");
+    error_code = read_line(&tmp);
+
+    if (error_code == 0)
+    {
+        error_code = init_string(street, tmp);
+    }
+
+    return error_code;
+}
+
+int read_house_number(unsigned int *house_number)
+{
+    int error_code = 0;
+    char end;
+
+    printf("Введите номер дома: ");
+    if (scanf("%u%c", house_number, &end) != 2)
+    {
+        error_code = Invalid_input;
+    }
+
+    return error_code;
+}
+
+int read_building(String *building)
+{
+    char *tmp = NULL;
+    int error_code = 0;
+
+    printf("Введите корпус: ");
+    error_code = read_line(&tmp);
+
+    if (error_code == 0)
+    {
+        error_code = init_string(building, tmp);
+    }
+
+    return error_code;
+}
+
+int read_apartment_number(unsigned int *apartment_number)
+{
+    int error_code = 0;
+    char end;
+
+    printf("Введите номер квартиры: ");
+    if (scanf("%d%c", apartment_number, &end) != 2)
+    {
+        error_code = Invalid_input;
+    }
+
+    return error_code;
+}
+
+int read_postal_code(String *postal_code)
+{
+    char *tmp = NULL;
+    int error_code = 0;
+
+    printf("Введите почтовый идентификатор (6 символов): ");
+    error_code = read_line(&tmp);
+
+    if (error_code == 0)
+    {
+        if (strlen(tmp) > 6)
+        {
+            error_code = Invalid_input;
+        }
+    }
+
+    if (error_code == 0)
+    {
+        error_code = init_string(postal_code, tmp);
+    }
+
+    return error_code;
+}
+
+
+int read_address(Address *address) {
+    int error_code = 0;
+
+    printf("Address of receiver\n");
+    error_code = read_city(&address->city);
+
+    if (error_code == 0)
+    {
+        error_code = read_street(&address->street);
+    }
+
+    if (error_code == 0)
+    {
+        error_code = read_house_number(&address->house);
+    }
+
+    if (error_code == 0)
+    {
+        error_code = read_building(&address->building);
+    }
+
+    if (error_code == 0)
+    {
+        error_code = read_apartment_number(&address->apartment);
+    }
+
+    if (error_code == 0)
+    {
+        error_code = read_postal_code(&address->post_index);
+    }
+
+    return error_code;
+}
+
+
+int read_weight(float *weight)
+{
+    int error_code = 0;
+    char end;
+
+    printf("Введите вес посылки: ");
+    if (scanf("%f%c", weight, &end) != 2)
+    {
+        error_code = Invalid_input;
+    }
+
+    if (error_code == 0)
+    {
+        if (*weight < 0)
+        {
+            error_code = Invalid_input;
+        }
+    }
+
+    return error_code;
+}
+
+int read_delivery_time(String *delivery_time)
+{
+    char *tmp = NULL;
+    int error_code = 0;
+
+    printf("Введите дату доставки: ");
+    error_code = read_line(&tmp);
+
+    if (error_code == 0)
+    {
+        error_code = init_string(delivery_time, tmp);
+    }
+
+    return error_code;
+}
+
+int read_mail(Mail *mail)
+{
+    int error_code = 0;
+
+    error_code = read_address(&mail->address);
+
+    printf("Ввод информации о посылке\n");
+    if (error_code == 0)
+    {
+        error_code = read_weight(&mail->weight);
+    }
+
+    if (error_code == 0)
+    {
+        error_code = read_delivery_time(&mail->delivery_date);
+    }
+
+    return error_code;
+}

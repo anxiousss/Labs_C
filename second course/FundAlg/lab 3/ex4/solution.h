@@ -57,21 +57,13 @@ long long seconds_since_epoch(Time* t);
 
 int read_line(char **result);
 
-int init_address(Address** address, String* city, String* street, unsigned int house, String* building, unsigned int apartment, String* post_index);
-
-int read_address(String* city, String* street, unsigned int* house, String* building, unsigned int* apartment, String* post_index);
+int init_address(Address* address);
 
 int delete_address(Address* address);
-
-int init_mail(Mail** mail, Address* address, float weight, String* id, String* creation_date, String* delivery_date);
-
-int read_mail(float* weight, String* id, String* creation_date, String* delivery_date);
 
 int delete_mail(Mail* mail);
 
 int init_post(Post** post, Address* address, Mail** mails, int length, int capacity);
-
-int read_init_mail(Mail* mail, Address* address, String* city, String* street, unsigned int* house, String* building, unsigned int* apartment, String* post_index, float* weigt, String* id, String* creation_date, String* delivery_date);
 
 int delete_post(Post* post);
 
@@ -107,6 +99,24 @@ int read_choice(int* choice);
 
 int handle_choice(int choice, int* flag , Post* post);
 
+int read_city(String *city);
 
+int read_street(String *street);
+
+int read_house_number(unsigned int *house_number);
+
+int read_building(String *building);
+
+int read_apartment_number(unsigned int *apartment_number);
+
+int read_postal_code(String *postal_code);
+
+int read_address(Address *address);
+
+int read_weight(float *weight);
+
+int read_delivery_time(String *delivery_time);
+
+int read_mail(Mail *mail);
 
 #endif //EX3_4_SOLUTION_H

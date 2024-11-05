@@ -7,9 +7,14 @@ int len(const char* str) {
 }
 
 int init_string(String* string, char* src) {
-    string->size = len(src);
-    string->capacity = string->size + 5;
-    string->mas = (char *)(malloc(sizeof(char ) * string->capacity));
+    if (src == NULL) {
+        string->size = 0;
+        string->capacity = 5;
+    } else {
+        string->size = len(src);
+        string->capacity = string->size + 5;
+    }
+    string->mas = (char*)(malloc(sizeof(char) * string->capacity));
     if (!string->mas)
         return Memory_leak;
 

@@ -13,88 +13,10 @@ void print_help() {
 }
 
 int read_choice(int* choice) {
-    scanf("%d", choice);
+    char c;
+    scanf("%d%c", choice, &c);
     if (*choice < 1 || *choice > 6)
         return Invalid_input;
-    return 0;
-}
-
-int read_address(String* city, String* street, unsigned int* house, String* building, unsigned int* apartment, String* post_index) {
-    char* tmp_city, *tmp_street, *tmp_building, *tmp_post_index;
-    int err = read_line(&tmp_city);
-    if (err)
-        return err;
-    err = read_line(&tmp_street);
-    if (err)
-        return err;
-    scanf("%u", house);
-    err = read_line(&tmp_building);
-    if (err)
-        return err;
-    scanf("%u", apartment);
-    err = read_line(&tmp_post_index);
-    if (err)
-        return err;
-
-    int c = fgetc(stdin);
-    if (c == EOF)
-        return err;
-
-    err = init_string(city, tmp_city);
-    if (err)
-        return err;
-    err = init_string(street, tmp_street);
-    if (err)
-        return err;
-    err = init_string(building, tmp_building);
-    if (err)
-        return err;
-    err = init_string(post_index, tmp_post_index);
-    if (err)
-        return err;
-
-    return 0;
-}
-
-int read_mail(float* weight, String* id, String* creation_date, String* delivery_date) {
-    scanf("%f", weight);
-    char* tmp_id, *tmp_creation_date, *tmp_delivery_date;
-    int err = read_line(&tmp_id);
-    if (err)
-        return err;
-    err = read_line(&tmp_creation_date);
-    if (err)
-        return err;
-    err = read_line(&tmp_delivery_date);
-    if (err)
-        return err;
-
-    err = init_string(id, tmp_id);
-    if (err)
-        return err;
-    err = init_string(creation_date, tmp_creation_date);
-    if (err)
-        return err;
-    err = init_string(delivery_date, tmp_delivery_date);
-    if (err)
-        return err;
-    return 0;
-}
-
-int read_init_mail(Mail* mail, Address* address, String* city, String* street, unsigned int* house, String* building, unsigned int* apartment, String* post_index, float* weight, String* id, String* creation_date, String* delivery_date) {
-    int err = read_address(city, street, house, building, apartment, post_index);
-    if (err)
-        return  Memory_leak;
-    err = init_address(&address, city, street, *house, building, *apartment, post_index);
-    if (err)
-        return Memory_leak;
-
-    err = read_mail(weight, id, creation_date, delivery_date);
-    if (err)
-        return err;
-    err = init_mail(&mail, address, *weight, id, creation_date, delivery_date);
-    if (err)
-        return err;
     return 0;
 }
 
@@ -120,12 +42,8 @@ void print_mails(Post* post) {
 
 
 int handle_choice(int choice, int* flag, Post* post) {
-    Mail* mail;
-    Address* address;
-    String city, street, building, post_index;
-    unsigned house, apartment;
-    float weight;
-    String id, creation_date, delivery_date;
+    Mail* mail = NULL;
+    Address* address = NULL;
 
     int err;
     switch (choice) {
@@ -134,30 +52,19 @@ int handle_choice(int choice, int* flag, Post* post) {
             return 0;
         case ADD:
             if (*flag == 0) {
-                Address* post_address;
-                String post_city, post_street, post_building, post_post_index;
-                unsigned int post_house, post_apartment;
-                err = read_address(&post_city, &post_street, &post_house, &post_building, &post_apartment, &post_post_index);
+                err = read_address(post->address);
                 if (err)
                     return err;
-                err = init_address(&post_address, &post_city, &post_street, post_house, &post_building, post_apartment, &post_post_index);
-                if (err)
-                    return Memory_leak;
-
-                post->address = post_address;
                 *flag = 1;
             }
-            err = read_init_mail(mail, address, &city, &street, &house, &building, &apartment, &post_index, &weight, &id, &creation_date, &delivery_date);
+            err = read_mail(mail);
             if (err)
                 return err;
             err = add_mail(&mail, post);
-            if (err)    
+            if (err)
                 return err;
             return 0;
         case REMOVE:
-            err = read_init_mail(mail, address, &city, &street, &house, &building, &apartment, &post_index, &weight, &id, &creation_date, &delivery_date);
-            if (err)
-                return err;
             err = remove_mail(&mail, post);
             if (err)
                 return err;
@@ -167,9 +74,6 @@ int handle_choice(int choice, int* flag, Post* post) {
             print_mails(post);
             return 0;
         case SEARCH:
-            err = read_init_mail(mail, address, &city, &street, &house, &building, &apartment, &post_index, &weight, &id, &creation_date, &delivery_date);
-            if (err)
-                return err;
             int index = 0;
             err = search_mail(mail, post, &index);
             if (err) {
@@ -203,6 +107,6 @@ int dialog_manager() {
             return err;
         err = handle_choice(choice, &flag, post);
         if (err)
-            return err;
+                return err;
     }
 }
