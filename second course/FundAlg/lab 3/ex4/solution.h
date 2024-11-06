@@ -55,6 +55,10 @@ int days_in_month(int month, int year);
 
 long long seconds_since_epoch(Time* t);
 
+int is_number(const char *str);
+
+int is_valid_datetime(const char *str);
+
 int read_line(char **result);
 
 int delete_address(Address* address);
@@ -76,6 +80,8 @@ int search_mail(Mail* mail, Post* post, int* index);
 int cmp1_mail(const void* a, const void* b);
 
 int cmp2_mail(const void* a, const void* b);
+
+void print_mail_info(const Mail *mail);
 
 void sort_mails(Post* post);
 
@@ -113,7 +119,9 @@ int read_address(Address *address);
 
 int read_weight(float *weight);
 
-int read_delivery_time(String *delivery_time);
+int read_time(String *delivery_time);
+
+int read_id(String* id);
 
 int read_mail(Mail *mail);
 

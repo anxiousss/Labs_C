@@ -20,6 +20,20 @@ int read_choice(int* choice) {
     return 0;
 }
 
+void print_mail_info(const Mail *mail) {
+    printf("ID: %s\n", mail->id.mas);
+    printf("Address: %s, %s, house %d, building %s, apt %d, postal code %s\n",
+           mail->address.city.mas,
+           mail->address.street.mas,
+           mail->address.house,
+           mail->address.building.mas,
+           mail->address.apartment,
+           mail->address.post_index.mas);
+    printf("Weight: %.2f\n", mail->weight);
+    printf("Creation Time: %s\n", mail->creation_date.mas);
+    printf("Delivery Time: %s\n", mail->delivery_date.mas);
+}
+
 void print_mails(Post* post) {
     if (post == NULL || post->mails == NULL) {
         printf("Invalid input\n");
@@ -45,17 +59,20 @@ int handle_choice(int choice, int* flag, Post* post) {
 
     int err;
     Mail* tmp;
+    int index = 0;
     switch (choice) {
         case HELP:
             print_help();
             return 0;
         case ADD:
             if (*flag == 0) {
+                printf("Address of post\n");
                 err = read_address(post->address);
                 if (err)
                     return err;
                 *flag = 1;
             }
+            printf("Address of receiver\n");
             tmp = (Mail*)(malloc(sizeof(Mail)));
             if (!tmp)
                 return Memory_leak;
@@ -82,7 +99,6 @@ int handle_choice(int choice, int* flag, Post* post) {
             print_mails(post);
             return 0;
         case SEARCH:
-            int index = 0;
             tmp = (Mail*)(malloc(sizeof(Mail)));
             if (!tmp)
                 return Memory_leak;
@@ -94,14 +110,15 @@ int handle_choice(int choice, int* flag, Post* post) {
                 printf("Not found\n");
                 return 0;
             }
+            print_mail_info(post->mails[index]);
             printf("Found\n");
             return 0;
         case EXIT:
             printf("DIALOG IS ENDED\n");
             *flag = -1;
             return 0;
-            default:
-                return Invalid_input;
+        default:
+            return Invalid_input;
     }
 }
 
@@ -111,16 +128,18 @@ int dialog_manager() {
     if (err)
         return Memory_leak;
     int flag = 0;
-    print_menu();
     while (1) {
-        if (flag == -1)
+        print_menu();
+        if (flag == -1) {
+            delete_post(post);
             return 0;
+        }
         int choice;
         err = read_choice(&choice);
         if (err)
             return err;
         err = handle_choice(choice, &flag, post);
         if (err)
-                return err;
+            return err;
     }
 }

@@ -32,6 +32,7 @@ void delete_string(String* string) {
     string->mas = NULL;
     string->size = 0;
     string->capacity = 0;
+    free(string);
 }
 
 int cmp_string(String* string1, String* string2) {
@@ -66,7 +67,7 @@ int copy_str(String* dst, String* src) {
         return Memory_leak;
     dst->size = src->size;
     char* tempdst = dst->mas;
-    char* tempsrc = src->mas;
+    char* tempsrc =  src->mas;
     while ((*dst->mas++ = *src->mas++));\
     dst->mas = tempdst;
     src->mas = tempsrc;

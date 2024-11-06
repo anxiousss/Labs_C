@@ -68,6 +68,40 @@ int days_in_month(int month, int year) {
     return seconds;
 }
 
+int is_number(const char *str) {
+    while (*str) {
+        if (!isdigit(*str)) {
+            return 0;
+        }
+        str++;
+    }
+    return 1;
+}
+
+int is_valid_datetime(const char *str) {
+    const char *format = "dd::MM:yyyy hh::mm::ss";
+    int day, month, year, hour, minute, second;
+
+    if (strlen(str) != strlen(format)) {
+        return 0;
+    }
+
+    if (sscanf(str, "%2d::%2d:%4d %2d::%2d::%2d", &day, &month, &year, &hour, &minute, &second) != 6) {
+        return 0;
+    }
+
+    if (!is_number(str) || !is_number(str + 3) || !is_number(str + 6) || !is_number(str + 11) || !is_number(str + 14) || !is_number(str + 17)) {
+        return 0;
+    }
+
+    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100 ||
+        hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
+        return 0;
+    }
+
+    return Invalid_input;
+}
+
 
 int read_line(char **result) {
     int buffer_size = 16;
@@ -147,7 +181,7 @@ int init_post(Post** post, int length, int capacity) {
 
 int delete_post(Post* post) {
     delete_address(post->address);
-    for (int i = 0; i < post->capacity; ++i) {
+    for (int i = 0; i < post->length; ++i) {
         delete_mail(post->mails[i]);
     }
     free(post);
@@ -351,7 +385,7 @@ int read_postal_code(String *postal_code)
 
     if (error_code == 0)
     {
-        if (strlen(tmp) > 6)
+        if (strlen(tmp) != 6)
         {
             error_code = Invalid_input;
         }
@@ -369,7 +403,6 @@ int read_postal_code(String *postal_code)
 int read_address(Address *address) {
     int error_code = 0;
 
-    printf("Address of receiver\n");
     error_code = read_city(&address->city);
 
     if (error_code == 0)
@@ -428,11 +461,24 @@ int read_time(String *delivery_time)
     char *tmp = NULL;
     int error_code = 0;
 
-    error_code = read_line(&tmp);
+    error_code = read_line(&tmp) || is_valid_datetime(tmp);
 
-    if (error_code == 0)
+    if (error_code == 0 )
     {
         error_code = init_string(delivery_time, tmp);
+    }
+
+    return error_code;
+}
+
+int read_id(String* id) {
+    char *tmp = NULL;
+    int error_code = 0;
+
+    error_code = read_line(&tmp) || len(tmp) == 14;
+    if (error_code == 0 )
+    {
+        error_code = init_string(id, tmp);
     }
 
     return error_code;
@@ -452,15 +498,22 @@ int read_mail(Mail *mail)
 
     if (error_code == 0)
     {
-        printf("CREATION TIME: ");
+        printf("ID: 14 symbols");
+        error_code = read_id(&mail->id);
+    }
+
+    if (error_code == 0)
+    {
+        printf("CREATION DATE: ");
         error_code = read_time(&mail->creation_date);
     }
 
     if (error_code == 0)
     {
-        printf("DELIVERY TIME:");
+        printf("DELIVERY DATE:");
         error_code = read_time(&mail->delivery_date);
     }
+
 
     return error_code;
 }
