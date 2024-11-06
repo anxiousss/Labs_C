@@ -9,6 +9,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <limits.h>
 
 typedef enum Errors {
     Invalid_input = 2,

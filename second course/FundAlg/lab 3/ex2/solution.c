@@ -118,7 +118,7 @@ int Allocate(double*** norms, Vector*** vectors, int n_vectors, int n_norms, int
             }
             free(*vectors);
 
-            for (int j = 0; j < n; ++j) {
+            for (int j = 0; j < i; ++j) {
                 free((*result)[j]);
             }
             free(*result);
@@ -259,6 +259,8 @@ void max_norm(Vector** vectors, double** norms, int n_vectors, int n_norms, char
             sprintf(buffer + strlen(buffer), "x%d = %f ", j + 1, vectors[max_index]->coords[j]);
         }
         sprintf(buffer + strlen(buffer), "\n");
+        if (result[i])
+            free(result[i]);
         result[i] = strdup(buffer);
     }
 }
