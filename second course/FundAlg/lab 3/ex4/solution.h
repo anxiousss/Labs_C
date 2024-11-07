@@ -11,6 +11,8 @@ typedef enum Command {
     REMOVE,
     PRINT,
     SEARCH,
+    SEARCH_DELIVERED,
+    SEARCH_EXPIRED,
     EXIT
 } Command;
 
@@ -73,9 +75,9 @@ int resize_post(Post* post, int size);
 
 int add_mail(Mail* mail, Post* post);
 
-int remove_mail(Mail** mail, Post* post);
+int remove_mail(Mail* mail, Post* post);
 
-int search_mail(Mail* mail, Post* post, int* index);
+int search_mail(String* id, Post* post, int* index);
 
 int cmp1_mail(const void* a, const void* b);
 
@@ -83,7 +85,7 @@ int cmp2_mail(const void* a, const void* b);
 
 void print_mail_info(const Mail *mail);
 
-void sort_mails(Post* post);
+void sort_mails_by_index(Post* post);
 
 void print_mails(Post* post);
 
@@ -123,6 +125,14 @@ int read_time(String *delivery_time);
 
 int read_id(String* id);
 
-int read_mail(Mail *mail);
+int read_mail(Mail *mail, Post *post);
+
+void sort_mails_by_time(Post *post);
+
+void print_expired_mails(Post *post);
+
+void print_delivered_mails(Post *post);
+
+int init_mail(Mail **mail, float weight);
 
 #endif //EX3_4_SOLUTION_H

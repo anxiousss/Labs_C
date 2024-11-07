@@ -79,27 +79,24 @@ int is_number(const char *str) {
 }
 
 int is_valid_datetime(const char *str) {
-    const char *format = "dd::MM:yyyy hh::mm::ss";
+    const char *format = "dd:MM:yyyy hh:mm:ss";
     int day, month, year, hour, minute, second;
 
     if (strlen(str) != strlen(format)) {
         return 0;
     }
 
-    if (sscanf(str, "%2d::%2d:%4d %2d::%2d::%2d", &day, &month, &year, &hour, &minute, &second) != 6) {
-        return 0;
-    }
-
-    if (!is_number(str) || !is_number(str + 3) || !is_number(str + 6) || !is_number(str + 11) || !is_number(str + 14) || !is_number(str + 17)) {
+    if (sscanf(str, "%2d:%2d:%4d %2d:%2d:%2d", &day, &month, &year, &hour, &minute, &second) != 6) {
         return 0;
     }
 
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100 ||
         hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
+        puts("4");
         return 0;
     }
 
-    return Invalid_input;
+    return 1;
 }
 
 
@@ -159,6 +156,16 @@ int delete_mail(Mail* mail) {
     return 0;
 }
 
+int init_mail(Mail **mail, float weight)
+{
+    (*mail) = (Mail *)(malloc(sizeof(Mail)));
+    if (!(*mail))
+        return Memory_leak;
+
+    (*mail)->weight = weight;
+    return 0;
+}
+
 int init_post(Post** post, int length, int capacity) {
     (*post) = (Post*)(malloc(sizeof(Post)));
     if (!*post)
@@ -173,7 +180,6 @@ int init_post(Post** post, int length, int capacity) {
     (*post)->capacity = capacity;
     (*post)->mails = (Mail**)(malloc(sizeof(Mail*) * capacity));
     if (!(*post)->mails) {
-        free((*post)->address);
         return Memory_leak;
     }
     return 0;
@@ -211,7 +217,36 @@ int add_mail(Mail* mail, Post* post) {
     return 0;
 }
 
-int remove_mail(Mail** mail, Post* post) {
+int cmp_address(Address* a, Address* b)
+{
+    int compare_city = cmp_string(&a->city, &b->city);
+    int compare_building = cmp_string(&a->building, &b->building);
+    int compare_street = cmp_string(&a->street, &b->street);
+    int compare_post_index = cmp_string(&a->post_index, &b->post_index);
+
+    int compare_house = a->house == b->house ? 0 : 1;
+    int compare_apartment = a->apartment == b->apartment ? 0 : 1;
+
+    return (compare_city + compare_building + compare_building
+    + compare_street + compare_post_index + compare_house
+    + compare_apartment);
+}
+
+int cmp_mail(Mail* a, Mail* b)
+{
+    double eps = 1e-6;
+    int compare_address = cmp_address(&a->address, &b->address);
+    int compare_weight = fabs(a->weight - b->weight) < eps ? 0 : 1;
+    int compare_id = cmp_string(&a->id, &b->id);
+    int compare_creation_date = cmp_string(&a->creation_date, &b->creation_date);
+    int compare_delivery_date = cmp_string(&a->delivery_date, &b->delivery_date);
+
+    return (compare_address + compare_creation_date + compare_delivery_date
+    + compare_weight + compare_id);
+
+}
+
+int remove_mail(Mail* mail, Post* post) {
     if (post == NULL || mail == NULL || post->mails == NULL) {
         return -1;
     }
@@ -219,8 +254,8 @@ int remove_mail(Mail** mail, Post* post) {
     int found = 0;
     int i;
 
-    for (i = 0; i < post->capacity; i++) {
-        if (post->mails[i] == *mail) {
+    for (i = 0; i < post->length; i++) {
+        if (cmp_mail(post->mails[i], mail) == 0) {
             found = 1;
             break;
         }
@@ -232,18 +267,19 @@ int remove_mail(Mail** mail, Post* post) {
 
     free(post->mails[i]);
 
-    for (int j = i; j < post->capacity - 1; j++) {
+    for (int j = i; j < post->length - 1; j++) {
         post->mails[j] = post->mails[j + 1];
     }
 
+    post->length--;
     post->capacity--;
 
     return 0;
 }
 
-int search_mail(Mail* mail, Post* post, int* index) {
+int search_mail(String* id, Post* post, int* index) {
     for (int i = 0; i < post->capacity; ++i) {
-        if (cmp1_mail(mail, post->mails[i]) == 0) {
+        if (cmp_string(id, &(post->mails[i]->id)) == 0) {
             *index = i;
             return 0;
         }
@@ -264,13 +300,13 @@ int cmp1_mail(const void* a, const void* b) {
 int cmp2_mail(const void* a, const void* b) {
     Mail* mail1 = *(Mail**)a;
     Mail* mail2 = *(Mail**)b;
-    String time1 = (String)mail1->creation_date;
-    String time2 = (String)mail2->creation_date;
+    String time1 = mail1->creation_date;
+    String time2 = mail2->creation_date;
 
     Time t1, t2;
-    if (!parse_time(&time1, &t1) || !parse_time(&time2, &t2)) {
-        return 0;
-    }
+
+    parse_time(&time1, &t1);
+    parse_time(&time2, &t2);
 
     if (t1.year != t2.year) return t1.year - t2.year;
 
@@ -285,10 +321,14 @@ int cmp2_mail(const void* a, const void* b) {
     return t1.second - t2.second;
 }
 
-void sort_mails(Post* post) {
-    qsort(post->mails, post->capacity, sizeof(Mail*), cmp2_mail);
+void sort_mails_by_index(Post* post) {
+    qsort(post->mails, post->length, sizeof(Mail*), cmp1_mail);
 }
 
+void sort_mails_by_time(Post *post)
+{
+    qsort(post->mails, post->length, sizeof(Mail*), cmp2_mail);
+}
 
 int is_expired(Mail* mail) {
     Time t;
@@ -308,7 +348,7 @@ int read_city(String *city) {
 
     if (error_code == 0)
     {
-        error_code = init_string(city, tmp);
+        error_code = init_string(city, &tmp);
     }
 
     return error_code;
@@ -325,7 +365,7 @@ int read_street(String *street)
 
     if (error_code == 0)
     {
-        error_code = init_string(street, tmp);
+        error_code = init_string(street, &tmp);
     }
 
     return error_code;
@@ -355,7 +395,7 @@ int read_building(String *building)
 
     if (error_code == 0)
     {
-        error_code = init_string(building, tmp);
+        error_code = init_string(building, &tmp);
     }
 
     return error_code;
@@ -393,7 +433,7 @@ int read_postal_code(String *postal_code)
 
     if (error_code == 0)
     {
-        error_code = init_string(postal_code, tmp);
+        error_code = init_string(postal_code, &tmp);
     }
 
     return error_code;
@@ -461,11 +501,16 @@ int read_time(String *delivery_time)
     char *tmp = NULL;
     int error_code = 0;
 
-    error_code = read_line(&tmp) || is_valid_datetime(tmp);
+    error_code = read_line(&tmp);
+
+    if (error_code == 0)
+    {
+        error_code = is_valid_datetime(tmp) == 0;
+    }
 
     if (error_code == 0 )
     {
-        error_code = init_string(delivery_time, tmp);
+        error_code = init_string(delivery_time, &tmp);
     }
 
     return error_code;
@@ -475,16 +520,29 @@ int read_id(String* id) {
     char *tmp = NULL;
     int error_code = 0;
 
-    error_code = read_line(&tmp) || len(tmp) == 14;
+    error_code = !(!read_line(&tmp) && strlen(tmp) == 14);
     if (error_code == 0 )
     {
-        error_code = init_string(id, tmp);
+        error_code = init_string(id, &tmp);
     }
 
     return error_code;
 }
 
-int read_mail(Mail *mail)
+int check_id(String *id, Post* post)
+{
+    for (int i = 0; i < post->length; ++i)
+    {
+        if (cmp_string(id, &post->mails[i]->id) == 0)
+        {
+            return INVALID_ID;
+        }
+    }
+
+    return 0;
+}
+
+int read_mail(Mail *mail, Post *post)
 {
     int error_code = 0;
 
@@ -498,8 +556,13 @@ int read_mail(Mail *mail)
 
     if (error_code == 0)
     {
-        printf("ID: 14 symbols");
+        printf("ID (14 symbols): ");
         error_code = read_id(&mail->id);
+    }
+
+    if (error_code == 0)
+    {
+        error_code = check_id(&mail->id, post);
     }
 
     if (error_code == 0)
@@ -516,4 +579,28 @@ int read_mail(Mail *mail)
 
 
     return error_code;
+}
+
+void print_delivered_mails(Post *post)
+{
+    printf("DELIVERED MAILS:\n");
+    for (int i = 0; i < post->length; i++)
+    {
+        if (!is_expired(post->mails[i]))
+        {
+            print_mail_info(post->mails[i]);
+        }
+    }
+}
+
+void print_expired_mails(Post *post)
+{
+    printf("EXPIRED MAILS:\n");
+    for (int i = 0; i < post->length; i++)
+    {
+        if (is_expired(post->mails[i]))
+        {
+            print_mail_info(post->mails[i]);
+        }
+    }
 }

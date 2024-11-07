@@ -7,6 +7,7 @@
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
+#include <math.h>
 
 typedef struct String {
   char* mas;
@@ -16,12 +17,13 @@ typedef struct String {
 
 typedef enum Errors {
     Invalid_input = 2,
-    Memory_leak
+    Memory_leak,
+    INVALID_ID
 } Errors;
 
 int len(const char* str);
 
-int init_string(String* string, char* src);
+int init_string(String* string, char** src);
 
 void delete_string(String* string);
 

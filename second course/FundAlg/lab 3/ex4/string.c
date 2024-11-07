@@ -6,20 +6,20 @@ int len(const char* str) {
     return i;
 }
 
-int init_string(String* string, char* src) {
+int init_string(String* string, char** src) {
     if (src == NULL) {
         string->size = 0;
         string->capacity = 5;
     } else {
-        string->size = len(src);
+        string->size = len(*src);
         string->capacity = string->size + 5;
     }
-    string->mas = (char*)(malloc(sizeof(char) * string->capacity));
+    string->mas = *src;
     if (!string->mas)
         return Memory_leak;
 
     for (int i = 0; i < string->size; ++i) {
-        string->mas[i] = src[i];
+        string->mas[i] = (*src)[i];
     }
     string->mas[string->size] = '\0';
     return 0;
@@ -32,7 +32,6 @@ void delete_string(String* string) {
     string->mas = NULL;
     string->size = 0;
     string->capacity = 0;
-    free(string);
 }
 
 int cmp_string(String* string1, String* string2) {
