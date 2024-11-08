@@ -23,6 +23,7 @@ typedef enum Command {
     FIND_SURNAME,
     FIND_GROUP,
     OUT_BEST,
+    OUT_STUDENTS,
     EXIT
 }Command;
 
@@ -44,7 +45,7 @@ int read_surname(FILE* fin, String* surname);
 
 int read_group(FILE* fin, String* group);
 
-int read_grades(FILE* fin, unsigned int* grades);
+int read_grades(FILE* fin, unsigned int** grades);
 
 int init_students(Students** students, int length, int capacity);
 
@@ -84,7 +85,7 @@ void sort_surname(Students* students);
 
 void sort_group(Students* students);
 
-int sum(unsigned int* grades);
+double average_student(Student* student);
 
 void write_student(Student* student, FILE* fin);
 
@@ -92,11 +93,13 @@ void print_menu();
 
 void print_help();
 
-float average_grade(Students* students);
+double average_grade(Students* students);
 
 void out_best(Students* students, FILE* fin);
 
 int read_choice(int* choice);
+
+void out_students(Students* students, FILE* fin);
 
 int handle_choice(int choice, FILE* fin, Students* students);
 

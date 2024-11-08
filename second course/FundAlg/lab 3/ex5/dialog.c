@@ -11,7 +11,8 @@ void print_menu() {
     printf("8  - FIND_SURNAME\n");
     printf("9  - FIND_GROUP\n");
     printf("10 - OUT_BEST\n");
-    printf("11 - EXIT\n");
+    printf("11 - OUT_STUDENTS\n");
+    printf("12 - EXIT\n");
 }
 
 void print_help() {
@@ -24,18 +25,19 @@ void print_help() {
     printf("8/FIND_SURNAME - Find by surname.\n");
     printf("9/FIND_GROUP - Find by group.\n");
     printf("10/OUT_BEST - Output best students in file.\n");
+    printf("11/OUT_STUDENTS - Output all students in file\n");
     printf("11/EXIT\n");
 }
 
 void write_student(Student* student, FILE* fin) {
-    fprintf(fin, "Id: %u Name: %s Surname: %s Group: %s Average: %d\n", student->id, student->name.mas, student->surname.mas, student->group.mas,
-            sum(student->grades));
+    fprintf(fin, "Id: %u Name: %s Surname: %s Group: %s Average: %lf\n", student->id, student->name.mas, student->surname.mas, student->group.mas,
+            average_student(student));
 }
 
 void out_best(Students* students, FILE* fin) {
-    float average = average_grade(students);
+    double average = average_grade(students);
     for (int i = 0; i < students->length; ++i) {
-        if ((float)sum(students->students[i]->grades) / 5 > average) {
+        if (average_student(students->students[i]) > average) {
             write_student(students->students[i], fin);
         }
     }
@@ -47,6 +49,12 @@ int read_choice(int* choice) {
     if (*choice < 1 || *choice > 12)
         return Invalid_input;
     return 0;
+}
+
+void out_students(Students* students, FILE* fin) {
+    for (int i = 0; i < students->length; ++i) {
+        write_student(students->students[i], fin);
+    }
 }
 
 int handle_choice(int choice, FILE* fin, Students* students) {
@@ -84,6 +92,8 @@ int handle_choice(int choice, FILE* fin, Students* students) {
                 printf("NOT FOUND\n");
                 return 0;
             }
+            printf("FOUND\n");
+            write_student(students->students[index], fin);
             return 0;
 
         case FIND_NAME:
@@ -95,6 +105,7 @@ int handle_choice(int choice, FILE* fin, Students* students) {
                 printf("NOT FOUND\n");
                 return 0;
             }
+            printf("FOUND\n");
             write_student(students->students[index], fin);
             return 0;
 
@@ -107,6 +118,7 @@ int handle_choice(int choice, FILE* fin, Students* students) {
                 printf("NOT FOUND\n");
                 return 0;
             }
+            printf("FOUND\n");
             write_student(students->students[index], fin);
             return 0;
 
@@ -119,11 +131,16 @@ int handle_choice(int choice, FILE* fin, Students* students) {
                 printf("NOT FOUND\n");
                 return 0;
             }
+            printf("FOUND\n");
             write_student(students->students[index], fin);
             return 0;
 
         case OUT_BEST:
             out_best(students, fin);
+            return 0;
+
+        case OUT_STUDENTS:
+            out_students(students, fin);
             return 0;
 
         default:

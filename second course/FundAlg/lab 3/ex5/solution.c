@@ -65,21 +65,13 @@ int read_line(FILE* fin, char **result) {
 
     *result = buffer;
 
-    if (ch != '\n' && ch != EOF) {
-        while ((ch = fgetc(fin)) != '\n' && ch != EOF);
-    }
-
     return 0;
 }
-
 int read_id(FILE* fin, unsigned int* id) {
-    int n = fscanf(fin, "%u", id);
-    if (n <= 0)
+    char c;
+    int n = fscanf(fin, "%u%c", id, &c);
+    if (n != 2)
         return Invalid_input;
-
-    int ch;
-    while ((ch = fgetc(fin)) != EOF && isspace(ch));
-    ungetc(ch, fin);
     return 0;
 }
 
@@ -113,14 +105,15 @@ int read_group(FILE* fin, String* group) {
     return err;
 }
 
-int read_grades(FILE* fin, unsigned int* grades) {
-    for (int i = 0; i < 5; ++i) {
-        int ch = getc(fin);
-        if (ch == EOF) {
-            return Invalid_input;
-        }
-        grades[i] = ch;
-    }
+int read_grades(FILE* fin, unsigned int** grades) {
+    *grades = (unsigned int* )(malloc(sizeof(unsigned int) * 5));
+    if (!(*grades))
+        return Memory_leak;
+    int c;
+    int n = fscanf(fin, "%u %u %u %u %u", *grades, *grades + 1, *grades + 2, *grades+  3, *grades + 4);
+    c = fgetc(fin);
+    if (n != 5)
+        return Invalid_input;
     return 0;
 }
 
@@ -137,7 +130,7 @@ int read_student(FILE* fin, Student* student) {
         err = read_group(fin, &(student->group));
 
     if (err == 0)
-        err = read_grades(fin, student->grades);
+        err = read_grades(fin, &(student->grades));
 
     return err;
 }
@@ -235,26 +228,25 @@ int find_group(Students* students, String* group) {
 }
 
 int cmp_id(const void* a, const void* b) {
-    Student* first = (Student*)a;
-    Student* second = (Student*)b;
+    Student* first = *(Student**)a;
+    Student* second = *(Student**)b;
     return first->id - second->id;
 }
-
 int cmp_name(const void* a, const void* b) {
-    Student* first = (Student*)a;
-    Student* second = (Student*)b;
+    Student* first = *(Student**)a;
+    Student* second = *(Student**)b;
     return cmp_string(&first->name, &second->name);
 }
 
 int cmp_surname(const void* a, const void* b) {
-    Student* first = (Student*)a;
-    Student* second = (Student*)b;
+    Student* first = *(Student**)a;
+    Student* second = *(Student**)b;
     return cmp_string(&first->surname, &second->surname);
 }
 
 int cmp_group(const void* a, const void* b) {
-    Student* first = (Student*)a;
-    Student* second = (Student*)b;
+    Student* first = *(Student**)a;
+    Student* second = *(Student**)b;
     return cmp_string(&first->group, &second->group);
 }
 
@@ -277,20 +269,19 @@ void sort_group(Students* students) {
 
 }
 
-int sum(unsigned int* grades) {
-    int total = 0;
+double average_student(Student* student) {
+    double total = 0.0;
     for (int i = 0; i < 5; ++i) {
-        total += grades[i];
+        total += (double )student->grades[i];
     }
-    return total;
+    return total / 5.0;
 }
 
-float average_grade(Students* students) {
-    float average = 0;
+double average_grade(Students* students) {
+    double average = 0;
     for (int i = 0; i < students->length; ++i) {
-        average += (float )sum(students->students[i]->grades);
-        average /= 5;
+        average += average_student(students->students[i]);
     }
-    average /= (float )students->length;
+    average /= (double )students->length;
     return average;
 }

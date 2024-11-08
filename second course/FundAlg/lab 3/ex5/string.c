@@ -32,7 +32,6 @@ void delete_string(String* string) {
     string->mas = NULL;
     string->size = 0;
     string->capacity = 0;
-    free(string);
 }
 
 int cmp_string(String* string1, String* string2) {
