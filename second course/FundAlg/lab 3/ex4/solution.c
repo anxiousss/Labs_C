@@ -68,35 +68,25 @@ int days_in_month(int month, int year) {
     return seconds;
 }
 
-int is_number(const char *str) {
-    while (*str) {
-        if (!isdigit(*str)) {
-            return 0;
-        }
-        str++;
-    }
-    return 1;
-}
-
 int is_valid_datetime(const char *str) {
     const char *format = "dd:MM:yyyy hh:mm:ss";
     int day, month, year, hour, minute, second;
 
     if (strlen(str) != strlen(format)) {
-        return 0;
+        return Invalid_input;
     }
 
     if (sscanf(str, "%2d:%2d:%4d %2d:%2d:%2d", &day, &month, &year, &hour, &minute, &second) != 6) {
-        return 0;
+        return Invalid_input;
     }
 
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100 ||
         hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
         puts("4");
-        return 0;
+        return Invalid_input;
     }
 
-    return 1;
+    return 0;
 }
 
 
@@ -153,16 +143,6 @@ int delete_mail(Mail* mail) {
     delete_string(&mail->creation_date);
     delete_string(&mail->delivery_date);
     free(mail);
-    return 0;
-}
-
-int init_mail(Mail **mail, float weight)
-{
-    (*mail) = (Mail *)(malloc(sizeof(Mail)));
-    if (!(*mail))
-        return Memory_leak;
-
-    (*mail)->weight = weight;
     return 0;
 }
 
@@ -236,7 +216,7 @@ int cmp_mail(Mail* a, Mail* b)
 {
     double eps = 1e-6;
     int compare_address = cmp_address(&a->address, &b->address);
-    int compare_weight = fabs(a->weight - b->weight) < eps ? 0 : 1;
+    int compare_weight = fabsf(a->weight - b->weight) < eps ? 0 : 1;
     int compare_id = cmp_string(&a->id, &b->id);
     int compare_creation_date = cmp_string(&a->creation_date, &b->creation_date);
     int compare_delivery_date = cmp_string(&a->delivery_date, &b->delivery_date);
@@ -375,13 +355,18 @@ int read_house_number(unsigned int *house_number)
 {
     int error_code = 0;
     char end;
-
+    int tmp;
     printf("Number of house: ");
-    if (scanf("%u%c", house_number, &end) != 2)
-    {
+    if (scanf("%d%c", &tmp, &end) != 2) {
         error_code = Invalid_input;
     }
 
+    if (error_code == 0) {
+        if (tmp < 0) {
+            return Invalid_input;
+        }
+    }
+    *house_number = (unsigned int)tmp;
     return error_code;
 }
 
@@ -405,13 +390,18 @@ int read_apartment_number(unsigned int *apartment_number)
 {
     int error_code = 0;
     char end;
-
+    int tmp;
     printf("Apartment number: ");
-    if (scanf("%d%c", apartment_number, &end) != 2)
+    if (scanf("%d%c", &tmp, &end) != 2)
     {
         error_code = Invalid_input;
     }
-
+    if (error_code == 0) {
+        if (tmp < 0) {
+            return Invalid_input;
+        }
+    }
+    *apartment_number = (unsigned int)tmp;
     return error_code;
 }
 
@@ -505,7 +495,7 @@ int read_time(String *delivery_time)
 
     if (error_code == 0)
     {
-        error_code = is_valid_datetime(tmp) == 0;
+        error_code = !(is_valid_datetime(tmp) == 0);
     }
 
     if (error_code == 0 )
@@ -519,6 +509,7 @@ int read_time(String *delivery_time)
 int read_id(String* id) {
     char *tmp = NULL;
     int error_code = 0;
+    printf("ID (14 symbols): ");
 
     error_code = !(!read_line(&tmp) && strlen(tmp) == 14);
     if (error_code == 0 )
@@ -535,7 +526,7 @@ int check_id(String *id, Post* post)
     {
         if (cmp_string(id, &post->mails[i]->id) == 0)
         {
-            return INVALID_ID;
+            return Invalid_id;
         }
     }
 
@@ -548,7 +539,6 @@ int read_mail(Mail *mail, Post *post)
 
     error_code = read_address(&mail->address);
 
-    printf("Parcels\n");
     if (error_code == 0)
     {
         error_code = read_weight(&mail->weight);
@@ -556,7 +546,6 @@ int read_mail(Mail *mail, Post *post)
 
     if (error_code == 0)
     {
-        printf("ID (14 symbols): ");
         error_code = read_id(&mail->id);
     }
 
@@ -573,7 +562,7 @@ int read_mail(Mail *mail, Post *post)
 
     if (error_code == 0)
     {
-        printf("DELIVERY DATE:");
+        printf("DELIVERY DATE: ");
         error_code = read_time(&mail->delivery_date);
     }
 

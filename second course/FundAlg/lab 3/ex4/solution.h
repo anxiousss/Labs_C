@@ -57,8 +57,6 @@ int days_in_month(int month, int year);
 
 long long seconds_since_epoch(Time* t);
 
-int is_number(const char *str);
-
 int is_valid_datetime(const char *str);
 
 int read_line(char **result);
@@ -89,11 +87,7 @@ void sort_mails_by_index(Post* post);
 
 void print_mails(Post* post);
 
-int search_all(Post* post);
-
 int is_expired(Mail* mail);
-
-int search_expired(Post* post);
 
 void print_menu();
 
@@ -132,7 +126,5 @@ void sort_mails_by_time(Post *post);
 void print_expired_mails(Post *post);
 
 void print_delivered_mails(Post *post);
-
-int init_mail(Mail **mail, float weight);
 
 #endif //EX3_4_SOLUTION_H

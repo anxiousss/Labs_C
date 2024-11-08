@@ -72,6 +72,7 @@ int handle_choice(int choice, int* flag, Post* post) {
         case HELP:
             print_help();
             return 0;
+
         case ADD:
             if (*flag == 0) {
                 printf("Address of post\n");
@@ -85,13 +86,21 @@ int handle_choice(int choice, int* flag, Post* post) {
             if (!tmp)
                 return Memory_leak;
             err = read_mail(tmp, post);
-            if (err)
+            if (err) {
+                delete_post(post);
                 return err;
+            }
+
             err = add_mail(tmp, post);
             if (err)
                 return err;
             return 0;
+
         case REMOVE:
+            if (post->length == 0) {
+                printf("No mails yet\n");
+                return Invalid_input;
+            }
             tmp = (Mail*)(malloc(sizeof(Mail)));
             if (!tmp)
                 return Memory_leak;
@@ -102,13 +111,14 @@ int handle_choice(int choice, int* flag, Post* post) {
             if (err)
                 return err;
             return 0;
+
         case PRINT:
             sort_mails_by_index(post);
             print_mails(post);
             return 0;
+
         case SEARCH:
             String id;
-            printf("Input id: ");
             err = read_id(&id);
             if (err)
                 return err;
@@ -136,6 +146,7 @@ int handle_choice(int choice, int* flag, Post* post) {
             printf("DIALOG IS ENDED\n");
             *flag = -1;
             return 0;
+
         default:
             return Invalid_input;
     }
