@@ -12,6 +12,20 @@ typedef struct Student {
     unsigned int* grades;
 } Student;
 
+typedef enum Command {
+    HELP = 1,
+    SORT_ID,
+    SORT_NAME,
+    SORT_SURNAME,
+    SORT_GROUP,
+    FIND_ID,
+    FIND_NAME,
+    FIND_SURNAME,
+    FIND_GROUP,
+    OUT_BEST,
+    EXIT
+}Command;
+
 typedef struct Students {
     Student** students;
     int length;
@@ -40,6 +54,8 @@ int delete_students(Students* students);
 
 int read_student(FILE* fin, Student* student);
 
+int read_students(FILE* fin, Students* students);
+
 int resize_students(Students* students, int size);
 
 int add_student(Student* student, Students* students);
@@ -67,5 +83,23 @@ void sort_name(Students* students);
 void sort_surname(Students* students);
 
 void sort_group(Students* students);
+
+int sum(unsigned int* grades);
+
+void write_student(Student* student, FILE* fin);
+
+void print_menu();
+
+void print_help();
+
+float average_grade(Students* students);
+
+void out_best(Students* students, FILE* fin);
+
+int read_choice(int* choice);
+
+int handle_choice(int choice, FILE* fin, Students* students);
+
+int dialog_manager(FILE* in, FILE* out);
 
 #endif //EX3_5_SOLUTION_H

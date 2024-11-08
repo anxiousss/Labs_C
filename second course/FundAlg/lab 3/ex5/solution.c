@@ -35,7 +35,6 @@ int init_students(Students** students, int length, int capacity) {
     }
     return 0;
 }
-
 int read_line(FILE* fin, char **result) {
     int buffer_size = 16;
     int length = 0;
@@ -74,9 +73,13 @@ int read_line(FILE* fin, char **result) {
 }
 
 int read_id(FILE* fin, unsigned int* id) {
-    int n = fscanf(fin, "%u ", id);
+    int n = fscanf(fin, "%u", id);
     if (n <= 0)
         return Invalid_input;
+
+    int ch;
+    while ((ch = fgetc(fin)) != EOF && isspace(ch));
+    ungetc(ch, fin);
     return 0;
 }
 
@@ -112,10 +115,11 @@ int read_group(FILE* fin, String* group) {
 
 int read_grades(FILE* fin, unsigned int* grades) {
     for (int i = 0; i < 5; ++i) {
-        if (feof(fin)) {
+        int ch = getc(fin);
+        if (ch == EOF) {
             return Invalid_input;
         }
-        grades[i] = getc(fin);
+        grades[i] = ch;
     }
     return 0;
 }
@@ -136,6 +140,23 @@ int read_student(FILE* fin, Student* student) {
         err = read_grades(fin, student->grades);
 
     return err;
+}
+
+int read_students(FILE* fin, Students* students) {
+    while (!feof(fin)) {
+        Student* student = (Student*)(malloc(sizeof(Student)));
+        if (!student) {
+            delete_students(students);
+            return Memory_leak;
+        }
+        int err = read_student(fin, student);
+        if (err)
+            return err;
+        err = add_student(student, students);
+        if (err)
+            return err;
+    }
+    return 0;
 }
 
 int delete_student(Student* student) {
@@ -254,4 +275,22 @@ void sort_surname(Students* students) {
 void sort_group(Students* students) {
     qsort(students->students, students->length, sizeof(Student*), cmp_group);
 
+}
+
+int sum(unsigned int* grades) {
+    int total = 0;
+    for (int i = 0; i < 5; ++i) {
+        total += grades[i];
+    }
+    return total;
+}
+
+float average_grade(Students* students) {
+    float average = 0;
+    for (int i = 0; i < students->length; ++i) {
+        average += (float )sum(students->students[i]->grades);
+        average /= 5;
+    }
+    average /= (float )students->length;
+    return average;
 }

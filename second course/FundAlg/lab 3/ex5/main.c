@@ -25,6 +25,15 @@ int main(int argc, char** argv) {
         return Invalid_input;
     }
 
-    //code
-    return 0;
+    int result = dialog_manager(in, out);
+    switch (result) {
+        case Invalid_input:
+            printf("Invalid input");
+            return Invalid_input;
+        case Memory_leak:
+            printf("Memory leak");
+            return Memory_leak;
+        default:
+            return 0;
+    }
 }
