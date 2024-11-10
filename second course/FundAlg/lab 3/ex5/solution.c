@@ -80,7 +80,7 @@ int read_name(FILE* fin, String* name) {
     int err = 0;
     err = read_line(fin, &tmp);
     if (err == 0) {
-        err = init_string(name, tmp);
+        err = init_string(name, &tmp);
     }
     return err;
 }
@@ -90,7 +90,7 @@ int read_surname(FILE* fin, String* surname) {
     int err = 0;
     err = read_line(fin, &tmp);
     if (err == 0) {
-        err = init_string(surname, tmp);
+        err = init_string(surname, &tmp);
     }
     return err;
 }
@@ -100,7 +100,7 @@ int read_group(FILE* fin, String* group) {
     int err = 0;
     err = read_line(fin, &tmp);
     if (err == 0) {
-        err = init_string(group, tmp);
+        err = init_string(group, &tmp);
     }
     return err;
 }
@@ -157,6 +157,7 @@ int delete_student(Student* student) {
     delete_string(&student->surname);
     delete_string(&student->group);
     free(student->grades);
+    free(student);
     return 0;
 }
 
@@ -164,6 +165,7 @@ int delete_students(Students* students) {
     for (int i = 0; i < students->length; ++i) {
         delete_student(students->students[i]);
     }
+    free(students->students);
     free(students);
     return 0;
 }

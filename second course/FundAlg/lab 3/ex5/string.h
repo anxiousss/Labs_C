@@ -7,6 +7,7 @@
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
+#include <limits.h>
 
 typedef struct String {
     char* mas;
@@ -22,7 +23,7 @@ typedef enum Errors {
 
 int len(const char* str);
 
-int init_string(String* string, char* src);
+int init_string(String* string, char** src);
 
 void delete_string(String* string);
 
