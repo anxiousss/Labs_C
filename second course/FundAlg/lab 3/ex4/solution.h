@@ -73,6 +73,8 @@ int resize_post(Post* post, int size);
 
 int add_mail(Mail* mail, Post* post);
 
+int check_id(String *id, Post* post);
+
 int remove_mail(Mail* mail, Post* post);
 
 int search_mail(String* id, Post* post, int* index);
@@ -119,7 +121,7 @@ int read_time(String *delivery_time);
 
 int read_id(String* id);
 
-int read_mail(Mail *mail, Post *post);
+int read_mail(Mail *mail);
 
 void sort_mails_by_time(Post *post);
 

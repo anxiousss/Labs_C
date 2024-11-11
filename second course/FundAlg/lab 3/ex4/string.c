@@ -6,7 +6,7 @@ int len(const char* str) {
     return i;
 }
 
-int init_string(String* string, char** src) {
+int     init_string(String* string, char** src) {
     if (src == NULL) {
         string->size = 0;
         string->capacity = 5;
@@ -30,8 +30,6 @@ void delete_string(String* string) {
         free(string->mas);
 
     string->mas = NULL;
-    string->size = 0;
-    string->capacity = 0;
 }
 
 int cmp_string(String* string1, String* string2) {

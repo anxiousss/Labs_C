@@ -10,6 +10,8 @@ int main() {
         case Memory_leak:
             printf("Memory leak");
             return result;
+        case Invalid_id:
+            printf("Invalid id");
         default:
             return 0;
     }

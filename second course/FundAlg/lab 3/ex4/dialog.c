@@ -77,39 +77,56 @@ int handle_choice(int choice, int* flag, Post* post) {
             if (*flag == 0) {
                 printf("Address of post\n");
                 err = read_address(post->address);
-                if (err)
+                if (err) {
+                    delete_post(post);
                     return err;
+                }
                 *flag = 1;
             }
             printf("Address of receiver\n");
             tmp = (Mail*)(malloc(sizeof(Mail)));
             if (!tmp)
                 return Memory_leak;
-            err = read_mail(tmp, post);
+            err = read_mail(tmp);
             if (err) {
                 delete_post(post);
                 return err;
             }
-
-            err = add_mail(tmp, post);
-            if (err)
+            err = check_id(&tmp->id, post);
+            if (err) {
+                delete_post(post);
                 return err;
+            }
+            err = add_mail(tmp, post);
+            if (err) {
+                delete_post(post);
+                return err;
+            }
             return 0;
-
         case REMOVE:
             if (post->length == 0) {
                 printf("No mails yet\n");
                 return Invalid_input;
             }
             tmp = (Mail*)(malloc(sizeof(Mail)));
-            if (!tmp)
+            if (!tmp) {
+                delete_post(post);
                 return Memory_leak;
-            err = read_mail(tmp, post);
-            if (err)
+            }
+            err = read_mail(tmp);
+            if (err) {
+                delete_post(post);
                 return err;
+            }
             err = remove_mail(tmp, post);
-            if (err)
+            if (err > 0) {
+                delete_post(post);
+                delete_mail(tmp);
                 return err;
+            } else if (err == -1) {
+                printf("NOT FOUND\n");
+            }
+            delete_mail(tmp);
             return 0;
 
         case PRINT:
@@ -120,9 +137,10 @@ int handle_choice(int choice, int* flag, Post* post) {
         case SEARCH:
             String id;
             err = read_id(&id);
-            if (err)
+            if (err) {
+                delete_post(post);
                 return err;
-
+            }
             err = search_mail(&id, post, &index);
             if (err) {
                 printf("Not found\n");
@@ -130,6 +148,7 @@ int handle_choice(int choice, int* flag, Post* post) {
             }
             print_mail_info(post->mails[index]);
             printf("Found\n");
+            delete_string(&id);
             return 0;
 
         case SEARCH_DELIVERED:

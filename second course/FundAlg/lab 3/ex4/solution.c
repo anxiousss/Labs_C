@@ -6,11 +6,6 @@ int parse_time(String* src, Time* time) {
         return 1;
     }
 
-    if (day < 1 || day > 31 || month < 1 || month > 12 || year < 0 ||
-        hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
-        return 1;
-    }
-
     time->day = day;
     time->month = month;
     time->year = year;
@@ -46,7 +41,7 @@ int days_in_month(int month, int year) {
     return days[month - 1];
 }
 
-    long long seconds_since_epoch(Time* t) {
+long long seconds_since_epoch(Time* t) {
     long long seconds = 0;
 
     for (int y = 1970; y < t->year; y++) {
@@ -81,9 +76,8 @@ int is_valid_datetime(const char *str) {
     }
 
     if (day < 1 || day > 31 || month < 1 || month > 12 || year < 1900 || year > 2100 ||
-        hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59) {
-        puts("4");
-        return Invalid_input;
+        hour < 0 || hour > 23 || minute < 0 || minute > 59 || second < 0 || second > 59 || day > days_in_month(month, year)) {
+            return Invalid_input;
     }
 
     return 0;
@@ -133,15 +127,15 @@ int delete_address(Address* address) {
     delete_string(&(address->street));
     delete_string(&(address->building));
     delete_string(&(address->post_index));
-    free(address);
     return 0;
 }
 
 
 int delete_mail(Mail* mail) {
-    delete_string(&mail->id);
-    delete_string(&mail->creation_date);
-    delete_string(&mail->delivery_date);
+    delete_string(&(mail->id));
+    delete_string(&(mail->creation_date));
+    delete_string(&(mail->delivery_date));
+    delete_address(&(mail->address));
     free(mail);
     return 0;
 }
@@ -170,6 +164,8 @@ int delete_post(Post* post) {
     for (int i = 0; i < post->length; ++i) {
         delete_mail(post->mails[i]);
     }
+    free(post->mails);
+    free(post->address);
     free(post);
     return 0;
 }
@@ -227,10 +223,6 @@ int cmp_mail(Mail* a, Mail* b)
 }
 
 int remove_mail(Mail* mail, Post* post) {
-    if (post == NULL || mail == NULL || post->mails == NULL) {
-        return -1;
-    }
-
     int found = 0;
     int i;
 
@@ -245,8 +237,7 @@ int remove_mail(Mail* mail, Post* post) {
         return -1;
     }
 
-    free(post->mails[i]);
-
+    delete_mail(post->mails[i]);
     for (int j = i; j < post->length - 1; j++) {
         post->mails[j] = post->mails[j + 1];
     }
@@ -520,8 +511,7 @@ int read_id(String* id) {
     return error_code;
 }
 
-int check_id(String *id, Post* post)
-{
+int check_id(String *id, Post* post) {
     for (int i = 0; i < post->length; ++i)
     {
         if (cmp_string(id, &post->mails[i]->id) == 0)
@@ -533,7 +523,7 @@ int check_id(String *id, Post* post)
     return 0;
 }
 
-int read_mail(Mail *mail, Post *post)
+int read_mail(Mail *mail)
 {
     int error_code = 0;
 
@@ -547,11 +537,6 @@ int read_mail(Mail *mail, Post *post)
     if (error_code == 0)
     {
         error_code = read_id(&mail->id);
-    }
-
-    if (error_code == 0)
-    {
-        error_code = check_id(&mail->id, post);
     }
 
     if (error_code == 0)
