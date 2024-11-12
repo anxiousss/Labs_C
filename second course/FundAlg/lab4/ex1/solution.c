@@ -68,6 +68,7 @@ HashNode* init_node(String* value, String* def_name) {
     if (node == NULL) {
         return NULL;
     }
+    
     copy_newstr(&node->value, value);
     copy_newstr(&node->def_name, def_name);
     node->next = NULL;
@@ -88,6 +89,14 @@ int init_hash_table(HashTable** ht, int capacity, int length) {
     }
     (*ht)->length = length;
     (*ht)->capacity = capacity;
+    for (int i = 0; i < capacity; ++i) {
+        String s1, s2;
+        (*ht)->table[i] = init_node(&s1, &s2);
+        if (!(*ht)->table[i]) {
+            delete_hash_table(*ht);
+            return Memory_leak;
+        }
+    }
     return 0;
 }
 
@@ -102,7 +111,6 @@ void insert(HashTable * hash_table, String* value, String* def_name) {
         new_node->length = new_node->next->length + 1;
         hash_table->table[index] = new_node;
     }
-
     hash_table->length++;
 }
 
@@ -118,7 +126,7 @@ void delete_node(HashNode* hashNode) {
 }
 
 void delete_hash_table(HashTable* hash_table) {
-    for (int i = 0; i < hash_table->length; ++i) {
+    for (int i = 0; i < hash_table->capacity; ++i) {
         delete_node(hash_table->table[i]);
     }
     free(hash_table);
@@ -150,7 +158,7 @@ int restruct(HashTable* src, HashTable** dst, int capacity) {
         return Memory_leak;
     }
 
-    for (int i = 0; i < src->length; ++i) {
+    for (int i = 0; i < src->capacity; ++i) {
         HashNode* tmp = src->table[i];
         while (tmp != NULL) {
             insert(*dst, &tmp->value, &tmp->def_name);
@@ -172,7 +180,7 @@ int is_correct_def_name(String *s) {
 }
 
 int read_define(FILE* fin, HashTable* hash_table) {
-    int size = 0, err;
+    int err;
     while (1) {
         if (hash_table_check(hash_table)) {
             HashTable** dst = NULL;
@@ -222,9 +230,60 @@ int read_define(FILE* fin, HashTable* hash_table) {
             return err;
         }
         insert(hash_table, &v, &s);
-        ++size;
+    }
+    return 0;
+}
+
+int replacer(FILE* fin, HashTable* hash_table) {
+    int err;
+    while (!feof(fin)) {
+        char* tmp = NULL;
+        err = read_line(fin, &tmp, ' ');
+        if (err)
+            return err;
+        String s;
+        err = init_string(&s, &tmp);
+        if (err)
+            return err;
+
+        for (int i = 0; i < hash_table->capacity; ++i) {
+            HashNode* hashNode = hash_table->table[i];
+            int key = 0;
+            while (hashNode != NULL) {
+                if (eq_string(&s, &hashNode->def_name)) {
+                    copy_str(&s, &hashNode->value);
+                    ungetc(s.size, fin);
+                    fwrite(s.mas, sizeof(char ), s.size, fin);
+                    key = 1;
+                    break;
+                }
+                hashNode = hashNode->next;
+            }
+            if (key)
+                break;
+        }
+        delete_string(&s);
     }
     return 0;
 }
 
 
+int text_replace(FILE* fin) {
+    HashTable* ht;
+    int err = init_hash_table(&ht, TABLE_SIZE, 0);
+    if (err)
+        return err;
+
+    err = read_define(fin , ht);
+    if (err) {
+        delete_hash_table(ht);
+        return err;
+    }
+    err = replacer(fin, ht);
+    if (err) {
+        delete_hash_table(ht);
+        return err;
+    }
+    delete_hash_table(ht);
+    return 0;
+}

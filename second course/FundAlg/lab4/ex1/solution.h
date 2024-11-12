@@ -10,7 +10,6 @@
 typedef struct HashNode {
     String value;
     String def_name;
-    long long hash;
     int length;
     struct HashNode* next;
 } HashNode;
@@ -48,8 +47,8 @@ int is_correct_def_name(String *s);
 
 int read_define(FILE* fin, HashTable* hash_table);
 
-int replace(String* def_name, String* value);
-
 int replacer(FILE* fin, HashTable* hash_table);
+
+int text_replace(FILE* fin);
 
 #endif //EX4_1_SOLUTION_H

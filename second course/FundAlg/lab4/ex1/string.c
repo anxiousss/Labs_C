@@ -10,6 +10,8 @@ int init_string(String* string, char** src) {
     if (src == NULL) {
         string->size = 0;
         string->capacity = 5;
+        string->mas = NULL;
+        return 0;
     } else {
         string->size = len(*src);
         string->capacity = string->size + 5;
@@ -29,7 +31,6 @@ void delete_string(String* string) {
     if (string->mas)
         free(string->mas);
 
-    string->mas = NULL;
 }
 
 int cmp_string(String* string1, String* string2) {
