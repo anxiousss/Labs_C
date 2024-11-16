@@ -10,7 +10,9 @@ int init_string(String* string, char** src) {
     if (src == NULL) {
         string->size = 0;
         string->capacity = 5;
-        string->mas = NULL;
+        string->mas = (char* )(malloc(sizeof(char ) * string->capacity));
+        if (!string->mas)
+            return Memory_leak;
         return 0;
     } else {
         string->size = len(*src);
@@ -72,9 +74,7 @@ int copy_str(String* dst, String* src) {
 }
 
 int copy_newstr(String* dst, String* src) {
-    int err = init_string(dst, NULL);
-    if (err)
-        return err;
+    init_string(dst, NULL);
     dst->size = src->size;
     char* tempdst = dst->mas;
     char* tempsrc = src->mas;
@@ -83,6 +83,7 @@ int copy_newstr(String* dst, String* src) {
     src->mas = tempsrc;
     return 0;
 }
+
 
 int concatenation(String* A, String* B) {
     int new_size = A->size + B->size;

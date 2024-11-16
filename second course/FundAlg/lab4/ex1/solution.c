@@ -1,7 +1,7 @@
 #include "solution.h"
 
 
-int read_line(FILE* fin, char **result, char end_char) {
+int read_line(FILE* fin, char **result) {
     int buffer_size = 16;
     int length = 0;
     char *buffer = malloc(buffer_size);
@@ -11,7 +11,7 @@ int read_line(FILE* fin, char **result, char end_char) {
     }
 
     int ch;
-    while ((ch = fgetc(fin)) != end_char && ch != EOF) {
+    while ((ch = fgetc(fin)) && ch != ' ' && ch != '\n' && ch != EOF) {
         if (length + 1 >= buffer_size) {
             buffer_size *= 2;
             char *new_buffer = realloc(buffer, buffer_size);
@@ -31,16 +31,12 @@ int read_line(FILE* fin, char **result, char end_char) {
 
     *result = buffer;
 
-    if (ch != '\n' && ch != EOF) {
-        while ((ch = fgetc(stdin)) != '\n' && ch != EOF);
-    }
-
     return 0;
 }
 
-long long hash_func(String* def_name, int hash_size) {
-    long long hash_value = 0;
-    long long base_power = 1;
+unsigned long hash_func(String* def_name) {
+    unsigned long hash_value = 0;
+    unsigned long base_power = 1;
 
     for (int i = def_name->size - 1; i >= 0; i--) {
         char c = def_name->mas[i];
@@ -60,7 +56,7 @@ long long hash_func(String* def_name, int hash_size) {
         base_power *= 62;
     }
 
-    return hash_value % hash_size;
+    return hash_value;
 }
 
 HashNode* init_node(String* value, String* def_name) {
@@ -68,11 +64,21 @@ HashNode* init_node(String* value, String* def_name) {
     if (node == NULL) {
         return NULL;
     }
-    
+
+    if (value == NULL || def_name == NULL) {
+        if (value == NULL) init_string(&node->value, NULL);
+        if (def_name == NULL) init_string(&node->def_name, NULL);
+        node->next = NULL;
+        node->length = 1;
+        return node;
+    }
+
+
     copy_newstr(&node->value, value);
     copy_newstr(&node->def_name, def_name);
     node->next = NULL;
-    node->length = 0;
+    node->length = 1;
+    node->hash = 0;
     return node;
 }
 
@@ -90,8 +96,7 @@ int init_hash_table(HashTable** ht, int capacity, int length) {
     (*ht)->length = length;
     (*ht)->capacity = capacity;
     for (int i = 0; i < capacity; ++i) {
-        String s1, s2;
-        (*ht)->table[i] = init_node(&s1, &s2);
+        (*ht)->table[i] = init_node(NULL, NULL);
         if (!(*ht)->table[i]) {
             delete_hash_table(*ht);
             return Memory_leak;
@@ -100,16 +105,18 @@ int init_hash_table(HashTable** ht, int capacity, int length) {
     return 0;
 }
 
-void insert(HashTable * hash_table, String* value, String* def_name) {
-    long long index = hash_func(def_name, hash_table->length);
-    HashNode* new_node = init_node(value, def_name);
-
+void insert(HashTable * hash_table, HashNode* node) {
+    if (node->hash == 0) {
+        unsigned long hash = hash_func(&node->def_name);
+        node->hash = hash;
+    }
+    unsigned long index = node->hash % hash_table->capacity;
     if (hash_table->table[index] == NULL) {
-        hash_table->table[index] = new_node;
+        hash_table->table[index] = node;
     } else {
-        new_node->next = hash_table->table[index];
-        new_node->length = new_node->next->length + 1;
-        hash_table->table[index] = new_node;
+        node->next = hash_table->table[index];
+        node->length = node->next->length + 1;
+        hash_table->table[index] = node;
     }
     hash_table->length++;
 }
@@ -150,23 +157,15 @@ int hash_table_check(HashTable* hash_table) {
     return 0;
 }
 
-int restruct(HashTable* src, HashTable** dst, int capacity) {
-    int err = init_hash_table(dst, capacity, src->length);
-
-    if (err) {
-        delete_hash_table(src);
-        return Memory_leak;
-    }
-
+void restruct(HashTable* src, HashTable** dst) {
     for (int i = 0; i < src->capacity; ++i) {
         HashNode* tmp = src->table[i];
         while (tmp != NULL) {
-            insert(*dst, &tmp->value, &tmp->def_name);
+            insert(*dst, tmp);
             tmp = tmp->next;
         }
     }
     delete_hash_table(src);
-    return 0;
 }
 
 int is_correct_def_name(String *s) {
@@ -183,24 +182,26 @@ int read_define(FILE* fin, HashTable* hash_table) {
     int err;
     while (1) {
         if (hash_table_check(hash_table)) {
-            HashTable** dst = NULL;
-            err = restruct(hash_table, dst, new_size(hash_table->capacity));
+            HashTable* dst;
+            err = init_hash_table(&dst, new_size(hash_table->capacity), 0);
             if (err) {
-                return Memory_leak;
+                delete_hash_table(hash_table);
+                return err;
             }
-            hash_table = *dst;
+            restruct(hash_table, &dst);
+            hash_table = dst;
         }
         char* tmp = NULL;
         char* def_name = NULL;
         char* value = NULL;
-        err = read_line(fin, &tmp, ' ');
+        err = read_line(fin, &tmp);
         if (err) {
             return err;
         }
         if (strcmp(tmp, "#define") != 0) {
             break;
         }
-        err = read_line(fin, &def_name, ' ');
+        err = read_line(fin, &def_name);
         if (err) {
             free(tmp);
             return err;
@@ -215,7 +216,7 @@ int read_define(FILE* fin, HashTable* hash_table) {
             free(tmp);
             return Invalid_input;
         }
-        err = read_line(fin, &value, '\n');
+        err = read_line(fin, &value);
         if (err) {
             free(tmp);
             free(def_name);
@@ -229,7 +230,18 @@ int read_define(FILE* fin, HashTable* hash_table) {
             free(value);
             return err;
         }
-        insert(hash_table, &v, &s);
+        HashNode* node = init_node(&s, &v);
+        if (!node) {
+            free(tmp);
+            free(def_name);
+            free(value);
+            return err;
+        }
+        insert(hash_table, node);
+        printf("%s %s %s\n", tmp, def_name, value);
+        free(tmp);
+        free(def_name);
+        free(value);
     }
     return 0;
 }
@@ -238,7 +250,7 @@ int replacer(FILE* fin, HashTable* hash_table) {
     int err;
     while (!feof(fin)) {
         char* tmp = NULL;
-        err = read_line(fin, &tmp, ' ');
+        err = read_line(fin, &tmp);
         if (err)
             return err;
         String s;
