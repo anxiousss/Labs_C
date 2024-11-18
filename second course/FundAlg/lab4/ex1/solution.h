@@ -21,10 +21,26 @@ typedef struct {
     int capacity;
 } HashTable;
 
+typedef struct DirectiveNode {
+    String def_name;
+    String value;
+    struct DirectiveNode* next;
+} DirectiveNode;
+
+typedef struct DirectiveList {
+    DirectiveNode * head;
+} DirectiveList;
+
 #define max(a, b) (a > b) ? a : b
 #define min(a, b) (a < b) ? a : b
 
-int read_line(FILE* fin, char **result);
+DirectiveList* init_directive(void);
+
+int directive_push(DirectiveList* list, String* def_name, String* value);
+
+void directive_destroy(DirectiveList* list);
+
+int read_line(FILE* fin, char **result, char end_char);
 
 unsigned long hash_func(String* string);
 
@@ -44,9 +60,11 @@ int new_size(int hash_size);
 
 void restruct(HashTable* src, HashTable** dst);
 
+int fill_hashtable(HashTable* hashTable, DirectiveList* list);
+
 int is_correct_def_name(String *s);
 
-int read_define(FILE* fin, HashTable* hash_table);
+int read_define(FILE* fin, DirectiveList* directives);
 
 int replacer(FILE* fin, HashTable* hash_table);
 

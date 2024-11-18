@@ -12,9 +12,7 @@ int main(int argc, char** argv) {
         printf("Invalid_input");
         return Invalid_input;
     }
-
     int result = text_replace(fin);
-    fclose(fin);
     switch (result) {
         case Invalid_input:
             printf("Invalid input");
@@ -23,6 +21,7 @@ int main(int argc, char** argv) {
         case Memory_leak:
             printf("Memory leak");
             return Memory_leak;
+
         default:
             return 0;
     }
