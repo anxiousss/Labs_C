@@ -4,26 +4,16 @@
 
 #include <iostream>
 #include <cmath>
+#include <tuple>
 
 class ComplexNumber {
 private:
-    double real;
-    double imaginary;
+    std::pair<double, double> values;
 
 public:
-    ComplexNumber(double real, double imaginary);
+    ComplexNumber(double real = 0.0, double imaginary = 0.0);
 
-    double get_real() const;
-
-    double get_imaginary() const;
-
-    ComplexNumber add(const ComplexNumber& a, const ComplexNumber& b) const;
-
-    ComplexNumber sub(const ComplexNumber& a, const ComplexNumber& b) const;
-
-    ComplexNumber multiply(const ComplexNumber& a, const ComplexNumber& b) const;
-
-    ComplexNumber division(const ComplexNumber& a, const ComplexNumber& b) const;
+    std::pair<double, double> get_values() const;
 
     double absolute(const ComplexNumber& a) const;
 
@@ -31,13 +21,31 @@ public:
 
     ComplexNumber operator+(const ComplexNumber& other) const;
 
+    ComplexNumber& operator+=(const ComplexNumber& other);
+
+    void add(const ComplexNumber& n);
+
     ComplexNumber operator-(const ComplexNumber& other) const;
+
+    ComplexNumber operator-=(const ComplexNumber& other);
+
+    void sub(const ComplexNumber& n);
 
     ComplexNumber operator*(const ComplexNumber& other) const;
 
+    ComplexNumber operator*=(const ComplexNumber& other);
+
+    void multiply(const ComplexNumber& n);
+
     ComplexNumber operator/(const ComplexNumber& other) const;
 
+    ComplexNumber operator/=(const ComplexNumber& other);
+
+    void divide(const ComplexNumber& n);
+
     bool operator==(const ComplexNumber& other) const;
+
+    ComplexNumber operator-() const;
 
     ~ComplexNumber();
 

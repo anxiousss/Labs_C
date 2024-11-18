@@ -1,70 +1,101 @@
-
-
 #include "solution.h"
 
+ComplexNumber::ComplexNumber(double real, double imaginary) : values{real, imaginary} {}
 
-ComplexNumber::ComplexNumber(double real, double imaginary) : real(real), imaginary(imaginary) {}
-
-ComplexNumber ComplexNumber::add(const ComplexNumber& a, const ComplexNumber& b) const {
-    double new_real = a.real + b.real;
-    double new_imaginary = a.imaginary + b.imaginary;
-    return {new_real, new_imaginary};
+std::pair<double, double> ComplexNumber::get_values() const {
+    return this->values;
 }
 
-ComplexNumber ComplexNumber::sub(const ComplexNumber& a, const ComplexNumber& b) const{
-    double new_real = a.real - b.real;
-    double new_imaginary = a.imaginary - b.imaginary;
-    return {new_real, new_imaginary};
+double ComplexNumber::absolute(const ComplexNumber& a) const {
+    return std::sqrt(a.values.first * a.values.first + a.values.second * a.values.second);
 }
 
-ComplexNumber ComplexNumber::multiply(const ComplexNumber& a, const ComplexNumber& b) const{
-    double new_real = a.real * b.real - a.imaginary * b.imaginary;
-    double new_imaginary = a.real * b.imaginary +  a.imaginary * b.real;
-    return {new_real, new_imaginary};
-}
-
-ComplexNumber ComplexNumber::division(const ComplexNumber& a, const ComplexNumber& b)  const{
-    double denominator = b.real * b.real + b.imaginary * b.imaginary;
-
-    double new_real = (a.real * b.real + a.imaginary * b.imaginary) / denominator;
-    double new_imaginary = (a.imaginary * b.real - a.real * b.imaginary) / denominator;
-    return {new_real, new_imaginary};
-}
-
-double ComplexNumber::absolute(const ComplexNumber& a)  const{
-    return std::sqrt(a.real * a.real + a.imaginary * a.imaginary);
-}
-
-double ComplexNumber::argument(const ComplexNumber& a)  const{
-    return std::atan2(a.imaginary, a.real);
+double ComplexNumber::argument(const ComplexNumber& a) const {
+    return std::atan2(a.values.second, a.values.first);
 }
 
 ComplexNumber ComplexNumber::operator+(const ComplexNumber &other) const {
-    return add(*this, other);
+    auto tmp = other.get_values();
+    return {this->values.first + tmp.first, this->values.second + tmp.second};
+}
+
+ComplexNumber &ComplexNumber::operator+=(const ComplexNumber &other) {
+    auto tmp = other.get_values();
+    this->values.first += tmp.first;
+    this->values.second += tmp.second;
+    return *this;
+}
+
+void ComplexNumber::add(const ComplexNumber &n) {
+    *this += n;
 }
 
 ComplexNumber ComplexNumber::operator-(const ComplexNumber &other) const {
-    return sub(*this, other);
+    auto tmp = other.get_values();
+    return {this->values.first - tmp.first, this->values.second - tmp.second};
+}
+
+ComplexNumber ComplexNumber::operator-=(const ComplexNumber &other) {
+    auto tmp = other.get_values();
+    this->values.first -= tmp.first;
+    this->values.second -= tmp.second;
+    return *this;
+}
+
+void ComplexNumber::sub(const ComplexNumber &n) {
+    *this -= n;
 }
 
 ComplexNumber ComplexNumber::operator*(const ComplexNumber &other) const {
-    return multiply(*this, other);
+    auto tmp = other.get_values();
+    double new_real = this->values.first * tmp.first - this->values.second * tmp.second;
+    double new_imaginary = this->values.first * tmp.second + this->values.second * tmp.first;
+    return {new_real, new_imaginary};
+}
+
+ComplexNumber ComplexNumber::operator*=(const ComplexNumber &other) {
+    auto tmp = other.get_values();
+    double new_real = this->values.first * tmp.first - this->values.second * tmp.second;
+    double new_imaginary = this->values.first * tmp.second + this->values.second * tmp.first;
+    this->values.first = new_real;
+    this->values.second = new_imaginary;
+    return *this;
+}
+
+void ComplexNumber::multiply(const ComplexNumber &n) {
+    *this *= n;
 }
 
 ComplexNumber ComplexNumber::operator/(const ComplexNumber &other) const {
-    return division(*this, other);
+    auto tmp = other.get_values();
+    double denominator = tmp.first * tmp.first + tmp.second * tmp.second;
+    double new_real = (this->values.first * tmp.first + this->values.second * tmp.second) / denominator;
+    double new_imaginary = (this->values.second * tmp.first - this->values.first * tmp.second) / denominator;
+    return {new_real, new_imaginary};
+}
+
+ComplexNumber ComplexNumber::operator/=(const ComplexNumber &other) {
+    auto tmp = other.get_values();
+    double denominator = tmp.first * tmp.first + tmp.second * tmp.second;
+    double new_real = (this->values.first * tmp.first + this->values.second * tmp.second) / denominator;
+    double new_imaginary = (this->values.second * tmp.first - this->values.first * tmp.second) / denominator;
+    this->values.first = new_real;
+    this->values.second = new_imaginary;
+    return *this;
+}
+
+void ComplexNumber::divide(const ComplexNumber &n) {
+    *this /= n;
 }
 
 bool ComplexNumber::operator==(const ComplexNumber &other) const {
-    return this->real == other.real && this->imaginary == other.imaginary;
+    auto tmp = other.get_values();
+    double eps = 1e-6;
+    return (fabs(this->values.first - tmp.first) < eps && fabs(this->values.second - tmp.second) < eps);
 }
 
-double ComplexNumber::get_real() const {
-    return this->real;
-}
-
-double ComplexNumber::get_imaginary() const {
-    return this->imaginary;
+ComplexNumber ComplexNumber::operator-() const {
+    return {-this->values.first, -this->values.second};
 }
 
 ComplexNumber::~ComplexNumber() = default;
