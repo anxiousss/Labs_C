@@ -6,12 +6,12 @@ std::pair<double, double> ComplexNumber::get_values() const {
     return this->values;
 }
 
-double ComplexNumber::absolute(const ComplexNumber& a) const {
-    return std::sqrt(a.values.first * a.values.first + a.values.second * a.values.second);
+double ComplexNumber::absolute() const {
+    return std::sqrt(values.first * values.first + values.second * values.second);
 }
 
-double ComplexNumber::argument(const ComplexNumber& a) const {
-    return std::atan2(a.values.second, a.values.first);
+double ComplexNumber::argument() const {
+    return std::atan2(values.second, values.first);
 }
 
 ComplexNumber ComplexNumber::operator+(const ComplexNumber &other) const {
@@ -20,9 +20,7 @@ ComplexNumber ComplexNumber::operator+(const ComplexNumber &other) const {
 }
 
 ComplexNumber &ComplexNumber::operator+=(const ComplexNumber &other) {
-    auto tmp = other.get_values();
-    this->values.first += tmp.first;
-    this->values.second += tmp.second;
+    *this = *this + other;
     return *this;
 }
 
@@ -35,10 +33,9 @@ ComplexNumber ComplexNumber::operator-(const ComplexNumber &other) const {
     return {this->values.first - tmp.first, this->values.second - tmp.second};
 }
 
-ComplexNumber ComplexNumber::operator-=(const ComplexNumber &other) {
+ComplexNumber& ComplexNumber::operator-=(const ComplexNumber &other) {
     auto tmp = other.get_values();
-    this->values.first -= tmp.first;
-    this->values.second -= tmp.second;
+
     return *this;
 }
 
@@ -53,12 +50,8 @@ ComplexNumber ComplexNumber::operator*(const ComplexNumber &other) const {
     return {new_real, new_imaginary};
 }
 
-ComplexNumber ComplexNumber::operator*=(const ComplexNumber &other) {
-    auto tmp = other.get_values();
-    double new_real = this->values.first * tmp.first - this->values.second * tmp.second;
-    double new_imaginary = this->values.first * tmp.second + this->values.second * tmp.first;
-    this->values.first = new_real;
-    this->values.second = new_imaginary;
+ComplexNumber& ComplexNumber::operator*=(const ComplexNumber &other) {
+    *this = *this * other;
     return *this;
 }
 
@@ -68,19 +61,18 @@ void ComplexNumber::multiply(const ComplexNumber &n) {
 
 ComplexNumber ComplexNumber::operator/(const ComplexNumber &other) const {
     auto tmp = other.get_values();
+    double eps = 1e-6;
+    if (fabs(tmp.first - 0.0) < eps && fabs(tmp.second - 0.0) < eps) {
+        throw div_by_null();
+    }
     double denominator = tmp.first * tmp.first + tmp.second * tmp.second;
     double new_real = (this->values.first * tmp.first + this->values.second * tmp.second) / denominator;
     double new_imaginary = (this->values.second * tmp.first - this->values.first * tmp.second) / denominator;
     return {new_real, new_imaginary};
 }
 
-ComplexNumber ComplexNumber::operator/=(const ComplexNumber &other) {
-    auto tmp = other.get_values();
-    double denominator = tmp.first * tmp.first + tmp.second * tmp.second;
-    double new_real = (this->values.first * tmp.first + this->values.second * tmp.second) / denominator;
-    double new_imaginary = (this->values.second * tmp.first - this->values.first * tmp.second) / denominator;
-    this->values.first = new_real;
-    this->values.second = new_imaginary;
+ComplexNumber& ComplexNumber::operator/=(const ComplexNumber &other) {
+    *this = *this / other;
     return *this;
 }
 
@@ -96,6 +88,12 @@ bool ComplexNumber::operator==(const ComplexNumber &other) const {
 
 ComplexNumber ComplexNumber::operator-() const {
     return {-this->values.first, -this->values.second};
+}
+
+std::ostream &operator<<(std::ostream &out, const ComplexNumber &n) {
+    auto values = n.get_values();
+    out << "real part: " << values.first << " imaginary part: " << values.second << '\n';
+    return out;
 }
 
 ComplexNumber::~ComplexNumber() = default;

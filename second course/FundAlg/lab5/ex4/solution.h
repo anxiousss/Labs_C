@@ -5,6 +5,9 @@
 #include <iostream>
 #include <cmath>
 #include <tuple>
+#include <sstream>
+
+class div_by_null : std::exception {};
 
 class ComplexNumber {
 private:
@@ -15,9 +18,9 @@ public:
 
     std::pair<double, double> get_values() const;
 
-    double absolute(const ComplexNumber& a) const;
+    double absolute() const;
 
-    double argument(const ComplexNumber& a) const;
+    double argument() const;
 
     ComplexNumber operator+(const ComplexNumber& other) const;
 
@@ -27,19 +30,19 @@ public:
 
     ComplexNumber operator-(const ComplexNumber& other) const;
 
-    ComplexNumber operator-=(const ComplexNumber& other);
+    ComplexNumber& operator-=(const ComplexNumber& other);
 
     void sub(const ComplexNumber& n);
 
     ComplexNumber operator*(const ComplexNumber& other) const;
 
-    ComplexNumber operator*=(const ComplexNumber& other);
+    ComplexNumber& operator*=(const ComplexNumber& other);
 
     void multiply(const ComplexNumber& n);
 
     ComplexNumber operator/(const ComplexNumber& other) const;
 
-    ComplexNumber operator/=(const ComplexNumber& other);
+    ComplexNumber& operator/=(const ComplexNumber& other);
 
     void divide(const ComplexNumber& n);
 
@@ -48,7 +51,9 @@ public:
     ComplexNumber operator-() const;
 
     ~ComplexNumber();
-
 };
+
+std::ostream& operator<<(std::ostream& out, const ComplexNumber& n);
+
 
 #endif //EX5_4_SOLUTION_H

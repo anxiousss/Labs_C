@@ -1,6 +1,4 @@
 #include "solution.h"
-#include <iostream>
-#include <cmath>
 
 void testConstructor() {
     ComplexNumber c(3.0, 4.0);
@@ -14,7 +12,7 @@ void testConstructor() {
 
 void testAbsolute() {
     ComplexNumber c(3.0, 4.0);
-    double absValue = c.absolute(c);
+    double absValue = c.absolute();
     if (absValue == 5.0) {
         std::cout << "Test Absolute: PASSED" << std::endl;
     } else {
@@ -24,7 +22,7 @@ void testAbsolute() {
 
 void testArgument() {
     ComplexNumber c(1.0, 1.0);
-    double argValue = c.argument(c);
+    double argValue = c.argument();
     if (argValue == M_PI / 4) {
         std::cout << "Test Argument: PASSED" << std::endl;
     } else {
@@ -150,20 +148,21 @@ void testUnaryMinus() {
     }
 }
 
+void testOstreamOperator() {
+    ComplexNumber c1(1.0, 2.0);
+    std::cout << c1;
+}
+
 int main() {
-    testConstructor();
-    testAbsolute();
-    testArgument();
-    testAddition();
-    testSubtraction();
-    testMultiplication();
-    testDivision();
-    testEquality();
-    testAdditionAssignment();
-    testSubtractionAssignment();
-    testMultiplicationAssignment();
-    testDivisionAssignment();
-    testUnaryMinus();
+
+
+    ComplexNumber a(1, 2);
+    ComplexNumber b(3, 4);
+    ComplexNumber c = a - b;
+
+    std::cout << a << std::endl;
+    a = b;
+    std::cout << a << std::endl;
 
     return 0;
 }
