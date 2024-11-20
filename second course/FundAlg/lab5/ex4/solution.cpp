@@ -19,8 +19,10 @@ ComplexNumber ComplexNumber::operator+(const ComplexNumber &other) const {
     return {this->values.first + tmp.first, this->values.second + tmp.second};
 }
 
-ComplexNumber &ComplexNumber::operator+=(const ComplexNumber &other) {
-    *this = *this + other;
+ComplexNumber& ComplexNumber::operator+=(const ComplexNumber &other) {
+    auto tmp = other.get_values();
+    this->values.first += tmp.first;
+    this->values.second += tmp.second;
     return *this;
 }
 
@@ -35,7 +37,8 @@ ComplexNumber ComplexNumber::operator-(const ComplexNumber &other) const {
 
 ComplexNumber& ComplexNumber::operator-=(const ComplexNumber &other) {
     auto tmp = other.get_values();
-
+    this->values.first -= tmp.first;
+    this->values.second -= tmp.second;
     return *this;
 }
 
@@ -51,7 +54,9 @@ ComplexNumber ComplexNumber::operator*(const ComplexNumber &other) const {
 }
 
 ComplexNumber& ComplexNumber::operator*=(const ComplexNumber &other) {
-    *this = *this * other;
+    auto tmp = other.get_values();
+    this->values.first = this->values.first * tmp.first - this->values.second * tmp.second;
+    this->values.second = this->values.first * tmp.second + this->values.second * tmp.first;
     return *this;
 }
 
@@ -72,7 +77,14 @@ ComplexNumber ComplexNumber::operator/(const ComplexNumber &other) const {
 }
 
 ComplexNumber& ComplexNumber::operator/=(const ComplexNumber &other) {
-    *this = *this / other;
+    auto tmp = other.get_values();
+    double eps = 1e-6;
+    if (fabs(tmp.first - 0.0) < eps && fabs(tmp.second - 0.0) < eps) {
+        throw div_by_null();
+    }
+    double denominator = tmp.first * tmp.first + tmp.second * tmp.second;
+    this->values.first = (this->values.first * tmp.first + this->values.second * tmp.second) / denominator;
+    this->values.second = (this->values.second * tmp.first - this->values.first * tmp.second) / denominator;
     return *this;
 }
 
