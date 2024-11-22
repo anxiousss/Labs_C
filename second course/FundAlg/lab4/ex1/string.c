@@ -5,34 +5,30 @@ int len(const char* str) {
     while (str[++i] != '\0');
     return i;
 }
-
 int init_string(String* string, char** src) {
     if (src == NULL) {
         string->size = 0;
         string->capacity = 5;
-        string->mas = (char* )(malloc(sizeof(char ) * string->capacity));
+        string->mas = (char*)malloc(sizeof(char) * string->capacity);
         if (!string->mas)
             return Memory_leak;
+        string->mas[0] = '\0'; // Ensure it's a valid empty string
         return 0;
     } else {
         string->size = len(*src);
         string->capacity = string->size + 5;
+        string->mas = (char*)malloc(sizeof(char) * string->capacity);
+        if (!string->mas)
+            return Memory_leak;
+        strncpy(string->mas, *src, string->capacity);
+        string->mas[string->capacity - 1] = '\0'; // Ensure null-termination
+        return 0;
     }
-    string->mas = *src;
-    if (!string->mas)
-        return Memory_leak;
-
-    for (int i = 0; i < string->size; ++i) {
-        string->mas[i] = (*src)[i];
-    }
-    string->mas[string->size] = '\0';
-    return 0;
 }
 
 void delete_string(String* string) {
     if (string->mas)
         free(string->mas);
-
 }
 
 int cmp_string(String* string1, String* string2) {
@@ -59,20 +55,17 @@ int eq_string(String* A, String* B) {
         return 1;
     return 0;
 }
-
 int copy_str(String* dst, String* src) {
-    delete_string(dst);
-    dst->mas = (char *)(calloc(src->capacity, sizeof(char )));
+    delete_string(dst); // Free existing memory
+    dst->capacity = src->capacity;
+    dst->size = src->size;
+    dst->mas = (char*)malloc(sizeof(char) * dst->capacity);
     if (!dst->mas)
         return Memory_leak;
-    dst->size = src->size;
-    char* tempdst = dst->mas;
-    char* tempsrc =  src->mas;
-    while ((*dst->mas++ = *src->mas++));\
-    dst->mas = tempdst;
-    src->mas = tempsrc;
+    strncpy(dst->mas, src->mas, dst->capacity);
+    dst->mas[dst->capacity - 1] = '\0'; // Ensure null-termination
+    return 0;
 }
-
 int copy_newstr(String* dst, String* src) {
     init_string(dst, NULL);
     dst->size = src->size;

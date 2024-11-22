@@ -5,27 +5,34 @@ DirectiveList* init_directive(void) {
     if (!list)
         return NULL;
 
-    list->head = (DirectiveNode*)(malloc(sizeof(DirectiveNode)));
-    if (!list->head) {
-        free(list);
-        return NULL;
-    }
-
-    int err = init_string(&list->head->value, NULL);
-    if (err) {
-        free(list->head);
-        free(list);
-        return NULL;
-    }
-    err = init_string(&list->head->def_name, NULL);
-    if (err) {
-        delete_string(&list->head->value);
-        free(list);
-        return NULL;
-    }
-    list->head->next = NULL;
+    list->head = NULL;
     return list;
 }
+
+
+HashList* init_hash_list(void) {
+    HashList* list = (HashList*)(malloc(sizeof(HashList)));
+    if (!list)
+        return NULL;
+    list->head = NULL;
+    return list;
+}
+
+void hash_list_push(HashList* list, HashNode* node) {
+    if (list) {
+        node->next = NULL;
+        if (!list->head) {
+            list->head = node;
+        } else {
+            HashNode* iterator = list->head;
+            while (iterator->next != NULL) {
+                iterator = iterator->next;
+            }
+            iterator->next = node;
+        }
+    }
+}
+
 
 int directive_push(DirectiveList* list, String* def_name, String* value) {
     if (list) {
@@ -40,12 +47,14 @@ int directive_push(DirectiveList* list, String* def_name, String* value) {
         node->next = NULL;
         if (!list->head) {
             list->head = node;
+            list->head->next = NULL;
         } else {
             DirectiveNode* iterator = list->head;
             while (iterator->next != NULL) {
                 iterator = iterator->next;
             }
             iterator->next = node;
+            iterator->next->next = NULL;
         }
     }
     return 0;
@@ -168,11 +177,14 @@ void insert(HashTable * hash_table, HashNode* node) {
     unsigned long index = node->hash % hash_table->capacity;
     if (hash_table->table[index] == NULL) {
         hash_table->table[index] = node;
+        node->next = NULL;
     } else {
-        node->next = init_node(&hash_table->table[index]->value, &hash_table->table[index]->def_name);
-        node->length = node->next->length + 1;
+        HashNode* tmp = hash_table->table[index];
         hash_table->table[index] = node;
+        node->next = tmp;
+        node->length = node->next->length + 1;
     }
+
     hash_table->length++;
 }
 
@@ -214,15 +226,13 @@ int hash_table_check(HashTable* hash_table) {
     return 0;
 }
 
-void restruct(HashTable* src, HashTable** dst) {
-    for (int i = 0; i < src->capacity; ++i) {
-        HashNode* tmp = src->table[i];
-        while (tmp != NULL) {
-            insert(*dst, tmp);
-            tmp = tmp->next;
-        }
+void restruct(HashTable* src, HashTable** dst, HashList* nodes) {
+    HashNode* tmp = nodes->head;
+    while (tmp != NULL) {
+        insert(*dst, tmp);
+        tmp = tmp->next;
     }
-
+    printf("ROFLS ");
     delete_hash_table(src);
 }
 
@@ -291,7 +301,7 @@ int read_define(FILE* fin, DirectiveList* directives) {
     return 0;
 }
 
-int fill_hashtable(HashTable* hashTable, DirectiveList* list) {
+int fill_hashtable(HashTable* hashTable, DirectiveList* list, HashList* nodes) {
     DirectiveNode* head = list->head;
     while (head != NULL) {
         if (hash_table_check(hashTable)) {
@@ -299,19 +309,19 @@ int fill_hashtable(HashTable* hashTable, DirectiveList* list) {
             int err = init_hash_table(&dst, new_size(hashTable->capacity), 0);
             if (err)
                 return Memory_leak;
-            restruct(hashTable, &dst);
+            restruct(hashTable, &dst, nodes);
             hashTable = dst;
         }
         HashNode* node = init_node(&head->value, &head->def_name);
         if (!node) {
             return Memory_leak;
         }
+        hash_list_push(nodes, node);
         insert(hashTable, node);
         head = head->next;
     }
     return 0;
 }
-
 int replacer(FILE* fin, HashTable* hash_table) {
     int err;
     while (!feof(fin)) {
@@ -324,27 +334,28 @@ int replacer(FILE* fin, HashTable* hash_table) {
         if (err)
             return err;
 
+        int found = 0;
         for (int i = 0; i < hash_table->capacity; ++i) {
             HashNode* hashNode = hash_table->table[i];
-            int key = 0;
             while (hashNode != NULL) {
                 if (eq_string(&s, &hashNode->def_name)) {
                     copy_str(&s, &hashNode->value);
-                    ungetc(s.size, fin);
-                    fwrite(s.mas, sizeof(char ), s.size, fin);
-                    key = 1;
+                    fseek(fin, -s.size, SEEK_CUR);
+                    fwrite(s.mas, sizeof(char), s.size, fin);
+                    found = 1;
                     break;
                 }
                 hashNode = hashNode->next;
             }
-            if (key)
+            if (found)
                 break;
         }
         delete_string(&s);
+        if (tmp)
+            free(tmp);
     }
     return 0;
 }
-
 
 int text_replace(FILE* fin) {
     HashTable* ht;
@@ -358,26 +369,35 @@ int text_replace(FILE* fin) {
         return Memory_leak;
     }
 
-    err = read_define(fin , list);
+    err = read_define(fin, list);
     if (err) {
         delete_hash_table(ht);
         directive_destroy(list);
         return err;
     }
 
-    err = fill_hashtable(ht, list);
+    HashList* nodes = init_hash_list();
+    if (!nodes) {
+        delete_hash_table(ht);
+        directive_destroy(list);
+        return Memory_leak;
+    }
+    err = fill_hashtable(ht, list, nodes);
     if (err) {
         delete_hash_table(ht);
         directive_destroy(list);
+        free(nodes);
         return err;
     }
-    err = replacer(fin, ht);
+    /*err = replacer(fin, ht);
     if (err) {
         delete_hash_table(ht);
         directive_destroy(list);
+        free(nodes);
         return err;
-    }
+    }*/
     delete_hash_table(ht);
     directive_destroy(list);
+    free(nodes);
     return 0;
 }

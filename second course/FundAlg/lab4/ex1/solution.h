@@ -15,6 +15,11 @@ typedef struct HashNode {
     unsigned long hash;
 } HashNode;
 
+
+typedef struct HashList {
+    HashNode* head;
+} HashList;
+
 typedef struct {
     HashNode** table;
     int length;
@@ -36,7 +41,11 @@ typedef struct DirectiveList {
 
 DirectiveList* init_directive(void);
 
+HashList* init_hash_list(void);
+
 int directive_push(DirectiveList* list, String* def_name, String* value);
+
+void hash_list_push(HashList* list, HashNode* node);
 
 void directive_destroy(DirectiveList* list);
 
@@ -58,9 +67,9 @@ int hash_table_check(HashTable* hashTable);
 
 int new_size(int hash_size);
 
-void restruct(HashTable* src, HashTable** dst);
+void restruct(HashTable* src, HashTable** dst, HashList* list);
 
-int fill_hashtable(HashTable* hashTable, DirectiveList* list);
+int fill_hashtable(HashTable* hashTable, DirectiveList* list, HashList* nodes);
 
 int is_correct_def_name(String *s);
 
