@@ -9,7 +9,8 @@ int main() {
 
     Encoder encoder(bytes);
     try {
-        encoder.encode("input.txt", "out.txt");
+        encoder.encode("input.txt", "rrrr");
+        encoder.encode("rrrr", "rrrr.txt");
     } catch (const stream_error&) {
         std::cout << "File error" << std::endl;
         return 1;

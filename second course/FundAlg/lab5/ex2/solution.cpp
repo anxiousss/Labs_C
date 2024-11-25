@@ -14,13 +14,13 @@ void Encoder::set(const std::vector<std::byte>& key) {
 
 void Encoder::KSA() {
     s.resize(256);
-    for (size_t i = 0; i < 256; ++i) {
-        s[i] = static_cast<std::byte>(i);
+    for (size_t k = 0; k < 256; ++k) {
+        s[k] = static_cast<std::byte>(k);
     }
-    size_t j = 0;
-    for (size_t i = 0; i < 256; ++i) {
-        j = (j + static_cast<size_t>(s[i]) + static_cast<size_t>(key[i % key.size()])) % 256;
-        std::swap(s[i], s[j]);
+    size_t l = 0;
+    for (size_t k = 0; k < 256; ++k) {
+        l = (l + static_cast<size_t>(s[k]) + static_cast<size_t>(key[k % key.size()])) % 256;
+        std::swap(s[k], s[l]);
     }
     this->i = 0;
     this->j = 0;
@@ -34,6 +34,10 @@ std::byte Encoder::PRGA() {
 }
 
 void Encoder::encode(const std::string& in_path, const std::string& out_path) {
+    if (std::filesystem::equivalent(in_path, out_path)) {
+        throw equal_paths();
+    }
+
     std::ifstream in(in_path, std::ios::binary);
     if (!in.is_open()) {
         throw stream_error();

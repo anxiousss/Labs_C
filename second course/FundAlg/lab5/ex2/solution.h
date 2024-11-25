@@ -6,14 +6,17 @@
 #include <vector>
 #include <cstddef>
 #include <fstream>
+#include <filesystem>
 
 class stream_error: std::exception {};
+
+class equal_paths: std::exception {};
 
 class Encoder {
 private:
     std::vector<std::byte> key;
-    std::vector<std::byte> s; // RC4 permutation vector
-    size_t i = 0;             // RC4 indices
+    std::vector<std::byte> s;
+    size_t i = 0;
     size_t j = 0;
 
     void KSA();
