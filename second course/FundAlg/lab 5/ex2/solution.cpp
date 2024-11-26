@@ -1,5 +1,3 @@
-
-
 #include "solution.h"
 
 Encoder::Encoder(const std::vector<std::byte>& key)
@@ -7,33 +5,46 @@ Encoder::Encoder(const std::vector<std::byte>& key)
     KSA();
 }
 
-void Encoder::set(const std::vector<std::byte>& key) {
-    this->key = key;
+void Encoder::set_key(const std::vector<std::byte>& new_key) {
+    this->key = new_key;
+    reset();
+}
+
+void Encoder::encrypt(const std::string& in_path, const std::string& out_path) {
+    this->reset();
+    process(in_path, out_path);
+}
+
+void Encoder::decrypt(const std::string& in_path, const std::string& out_path) {
+    encrypt(in_path, out_path);
+}
+
+void Encoder::reset() {
     KSA();
 }
 
 void Encoder::KSA() {
-    s.resize(256);
+    this->s.resize(256);
     for (size_t k = 0; k < 256; ++k) {
-        s[k] = static_cast<std::byte>(k);
+        this->s[k] = static_cast<std::byte>(k);
     }
     size_t l = 0;
     for (size_t k = 0; k < 256; ++k) {
-        l = (l + static_cast<size_t>(s[k]) + static_cast<size_t>(key[k % key.size()])) % 256;
-        std::swap(s[k], s[l]);
+        l = (l + static_cast<size_t>(this->s[k]) + static_cast<size_t>(key[k % key.size()])) % 256;
+        std::swap(this->s[k], this->s[l]);
     }
     this->i = 0;
     this->j = 0;
 }
 
 std::byte Encoder::PRGA() {
-    i = (i + 1) % 256;
-    j = (j + static_cast<size_t>(s[i])) % 256;
-    std::swap(s[i], s[j]);
-    return s[(static_cast<size_t>(s[i]) + static_cast<size_t>(s[j])) % 256];
+    this->i = (this->i + 1) % 256;
+    this->j = (this->j + static_cast<size_t>(this->s[this->i])) % 256;
+    std::swap(this->s[this->i], this->s[this->j]);
+    return s[(static_cast<size_t>(this->s[this->i]) + static_cast<size_t>(this->s[this->j])) % 256];
 }
 
-void Encoder::encode(const std::string& in_path, const std::string& out_path) {
+void Encoder::process(const std::string& in_path, const std::string& out_path) {
     if (std::filesystem::equivalent(in_path, out_path)) {
         throw equal_paths();
     }
@@ -50,13 +61,11 @@ void Encoder::encode(const std::string& in_path, const std::string& out_path) {
 
     char c;
     while (in.get(c)) {
-        std::byte key_byte = PRGA();
-        std::byte encrypted_byte = static_cast<std::byte>(c) ^ key_byte;
-        out.put(static_cast<char>(encrypted_byte));
+        std::byte key_byte = this->PRGA();
+        std::byte processed_byte = static_cast<std::byte>(c) ^ key_byte;
+        out.put(static_cast<char>(processed_byte));
     }
 
     in.close();
     out.close();
 }
-
-Encoder::~Encoder() = default;

@@ -9,8 +9,8 @@ int main() {
 
     Encoder encoder(bytes);
     try {
-        encoder.encode("input.txt", "rrrr");
-        encoder.encode("rrrr", "rrrr.txt");
+        encoder.encrypt("photo_2024-11-26_13-40-14.jpg", "rrrr.txt");
+        encoder.decrypt("rrrr.txt", "out.txt");
     } catch (const stream_error&) {
         std::cout << "File error" << std::endl;
         return 1;

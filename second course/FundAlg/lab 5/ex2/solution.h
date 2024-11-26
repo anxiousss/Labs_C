@@ -19,16 +19,22 @@ private:
     size_t i = 0;
     size_t j = 0;
 
+    void reset();
+
     void KSA();
 
     std::byte PRGA();
 
 public:
     Encoder(const std::vector<std::byte>& key);
-    ~Encoder();
 
-    void encode(const std::string& in_path, const std::string& out_path);
-    void set(const std::vector<std::byte>& key);
+    void encrypt(const std::string& in_path, const std::string& out_path);
+
+    void decrypt(const std::string& in_path, const std::string& out_path);
+
+    void process(const std::string& in_path, const std::string& out_path);
+
+    void set_key(const std::vector<std::byte>& key);
 };
 
 #endif //EX5_2_SOLUTION_H
