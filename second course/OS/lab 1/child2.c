@@ -30,6 +30,7 @@ int main(int argc, char *argv[]) {
     ssize_t len;
     while ((len = read(STDIN_FILENO, buffer, MAX_LINE_LENGTH)) > 0) {
         if (strcmp(buffer, "exit") == 0) {
+            close(file);
             break;
         }
         reverse_string(buffer);
@@ -37,6 +38,5 @@ int main(int argc, char *argv[]) {
         write(file, "\n", 1);
     }
 
-    close(file);
     return 0;
 }
