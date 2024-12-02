@@ -29,8 +29,6 @@ struct Vector {
 
 typedef struct Vector Vector;
 
-int len(const char* str);
-
 Vector* init_vector(int size);
 
 void free_vector(Vector* v);
@@ -39,11 +37,8 @@ void push(Vector* v, Search search);
 
 void update(Vector* v, const char* sub, int ch);
 
-void check_search(Vector* v, int len, char*** result, char* file);
+void check_search(Vector* v, int len, char** result, int* result_count, char* file);
 
-int find(char*** result, char* file, const char* sub);
-
-int find_sub_files(char*** result, const char* substr, ...);
-
+char** FindFiles(char * sub, int amount, int* total_results, ...);
 
 #endif //SOLUTION_H
