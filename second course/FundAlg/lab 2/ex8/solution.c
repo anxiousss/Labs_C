@@ -1,5 +1,6 @@
 #include "solution.h"
 
+
 int len(const char* str) {
     int i = 0;
     while (str[i] != '\0') {
@@ -32,9 +33,11 @@ void remove_leading_zeros(const char* number, char* result) {
 
     if (is_negative) {
         result[0] = '-';
-        strcpy(result + 1, number + i);
+        int copy_len = len(number + i) + 1;
+        memmove(result + 1, number + i, copy_len);
     } else {
-        strcpy(result, number + i);
+        int copy_len = len(number + i) + 1;
+        memmove(result, number + i, copy_len);
     }
 }
 
@@ -47,6 +50,7 @@ char get_char(int digit) {
 }
 
 int get_digit(char c) {
+    c = toupper(c);
     if (c >= '0' && c <= '9') {
         return c - '0';
     } else if (c >= 'A' && c <= 'Z') {
@@ -57,63 +61,87 @@ int get_digit(char c) {
 }
 
 int addition(int base, char* a, char* b, char* result) {
-    char* a_no_zeros = (char*)(malloc(sizeof(char) * (len(a) + 2)));
-    char* b_no_zeros = (char*)(malloc(sizeof(char) * (len(b) + 2)));
+    char* a_no_zeros = strdup(a);
     if (!a_no_zeros) {
         return Memory_leak;
     }
 
+    char* b_no_zeros = strdup(b);
     if (!b_no_zeros) {
         free(a_no_zeros);
         return Memory_leak;
     }
 
-    remove_leading_zeros(a, a_no_zeros);
-    remove_leading_zeros(b, b_no_zeros);
+    remove_leading_zeros(a_no_zeros, a_no_zeros);
+    remove_leading_zeros(b_no_zeros, b_no_zeros);
+
     int len_a = len(a_no_zeros);
     int len_b = len(b_no_zeros);
     int max_len = len_a > len_b ? len_a : len_b;
     int carry = 0;
 
-    result[max_len + 1] = '\0';
+    char* temp_result = (char*)malloc((max_len + 2) * sizeof(char));
+    if (!temp_result) {
+        free(a_no_zeros);
+        free(b_no_zeros);
+        return Memory_leak;
+    }
 
-    for (int i = 0; i < max_len; i++) {
+    int i = 0;
+    while (i < len_a || i < len_b || carry > 0) {
         int digit_a = (i < len_a) ? get_digit(a_no_zeros[len_a - 1 - i]) : 0;
         int digit_b = (i < len_b) ? get_digit(b_no_zeros[len_b - 1 - i]) : 0;
-        int sum = digit_a + digit_b + carry;
-        carry = sum / base;
-        result[max_len - i] = get_char(sum % base);
+        int sum_digit = digit_a + digit_b + carry;
+        carry = sum_digit / base;
+        temp_result[i] = get_char(sum_digit % base);
+        i++;
     }
+    temp_result[i] = '\0';
+
+    for (int j = 0; j < i / 2; j++) {
+        char temp = temp_result[j];
+        temp_result[j] = temp_result[i - 1 - j];
+        temp_result[i - 1 - j] = temp;
+    }
+
+    remove_leading_zeros(temp_result, temp_result);
+    strcpy(result, temp_result);
+
     free(a_no_zeros);
     free(b_no_zeros);
-    if (carry > 0) {
-        result[0] = get_char(carry);
-    } else {
-        memmove(result, result + 1, max_len + 1);
-    }
+    free(temp_result);
     return 0;
 }
 
 int sum(int base, int n, char** result, ...) {
     va_list numbers;
     va_start(numbers, result);
-    char* number = va_arg(numbers, char*);
-    char* start = (char*)(malloc(sizeof(char) * 100));
-    if (!start) {
+
+    char* num = va_arg(numbers, char*);
+    char* temp_sum = strdup(num);
+    if (!temp_sum) {
+        va_end(numbers);
         return Memory_leak;
     }
-    strcpy(start, "0");
 
-    for (int i = 0; i < n; ++i) {
-        int err = addition(base, start, number, *result);
-        if (err) {
-            free(start);
-            return err;
+    for (int i = 1; i < n; i++) {
+        char* next_num = va_arg(numbers, char*);
+        char* new_sum = (char*)malloc((len(temp_sum) + len(next_num) + 2) * sizeof(char));
+        if (!new_sum) {
+            free(temp_sum);
+            va_end(numbers);
+            return Memory_leak;
         }
-        number = va_arg(numbers, char*);
-        strcpy(start, *result);
+        addition(base, temp_sum, next_num, new_sum);
+        free(temp_sum);
+        temp_sum = new_sum;
     }
-    free(start);
+
     va_end(numbers);
+
+    if (*result) {
+        free(*result);
+    }
+    *result = temp_sum;
     return 0;
 }
