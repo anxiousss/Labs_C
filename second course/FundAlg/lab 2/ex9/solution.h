@@ -17,7 +17,7 @@ int gcd(int a, int b);
 
 int is_prime(int n);
 
-int fractional_part_to_int(double number, int* numerator, int* denominator);
+void  fractional_part_to_int(double number, int* numerator, int* denominator);
 
 void prime_factors(int* factors, int number, int* index);
 

@@ -13,22 +13,20 @@ int is_prime(int n) {
     if (n <= 1) return 0;
     if (n == 2) return 1;
     if (n % 2 == 0) return 0;
-    for (int x = 3; x <= sqrt(n); x += 2) {
+    for (int x = 3; x * x <= n; x += 2) {
         if (n % x == 0)
             return 0;
     }
     return 1;
 }
 
-int fractional_part_to_int(double number, int* numerator, int* denominator) {
-    if (number < 0 || number >= 1)
-        return Invalid_input;
+void fractional_part_to_int(double x, int* numerator, int* denominator) {
     *numerator = 1;
-    *denominator = (int)round(1.0 / (number - (int)number));
+    *denominator = (int)round(1.0 / (x - floor(x)));
 
     double eps = 0.00001;
     double approximation = (double)*numerator / *denominator;
-    double difference = approximation - number;
+    double difference = approximation - x;
 
     while (fabs(difference) >= eps) {
         if (difference > 0) {
@@ -46,59 +44,61 @@ int fractional_part_to_int(double number, int* numerator, int* denominator) {
         }
 
         approximation = (double)*numerator / *denominator;
-        difference = approximation - number;
+        difference = approximation - x;
     }
+
     int divisor = gcd(*numerator, *denominator);
     *numerator /= divisor;
     *denominator /= divisor;
-    return 0;
 }
 
 void prime_factors(int* factors, int number, int* index) {
-    int i = 0;
-    if (number % 2 == 0) {
-        factors[i] = 2;
-        ++i;
-        while (number % 2 == 0)
-            number /= 2;
+    *index = 0;
+    if (number <= 1)
+        return;
+    while (number % 2 == 0) {
+        factors[(*index)++] = 2;
+        number /= 2;
     }
-
-    for (int x = 3; x <= sqrt(number); x += 2) {
-        if (number % x == 0 && is_prime(x)) {
-            factors[i] = x;
-            ++i;
-            while (number % x == 0)
+    for (int x = 3; x * x <= number; x += 2) {
+        while (number % x == 0) {
+            if (is_prime(x)) {
+                factors[(*index)++] = x;
                 number /= x;
+            }
         }
     }
-    if (number > 2)
-        factors[i] = number;
-    *index = i;
+    if (number > 2) {
+        factors[(*index)++] = number;
+    }
 }
 
 int is_finite(char*** results, int base, int n, ...) {
+    if (base <= 1)
+        return Invalid_input;
     va_list numbers;
     va_start(numbers, n);
-
+    *results = (char**)malloc(n * sizeof(char*));
+    if (!*results) {
+        va_end(numbers);
+        return Memory_leak;
+    }
     int factors_base[1024];
     int base_index = 0;
     prime_factors(factors_base, base, &base_index);
-
-    *results = (char**)malloc(n * sizeof(char*));
-
     for (int i = 0; i < n; ++i) {
         double number = va_arg(numbers, double);
-        int index = 0, flag = 0, denominator, numerator;
-        int factors[1024];
-        int err = fractional_part_to_int(number, &numerator, &denominator);
-        if (err)
-            return err;
-        prime_factors(factors, denominator, &index);
-
-        for (int j = 0; j < index; ++j) {
+        int numerator, denominator;
+        fractional_part_to_int(number - floor(number), &numerator, &denominator);
+        int factors_denominator[1024];
+        int denom_index = 0;
+        prime_factors(factors_denominator, denominator, &denom_index);
+        int flag = 0;
+        for (int j = 0; j < denom_index; ++j) {
+            int factor = factors_denominator[j];
             int is_divisor = 0;
             for (int k = 0; k < base_index; ++k) {
-                if (factors[j] == factors_base[k] && factors[j] != 0 && factors_base[k] != 0) {
+                if (factors_base[k] == factor) {
                     is_divisor = 1;
                     break;
                 }
@@ -108,12 +108,20 @@ int is_finite(char*** results, int base, int n, ...) {
                 break;
             }
         }
-
-        char buffer[128];
-        buffer[0] = '\0';
-        const char* s = flag ? "NO" : "YES";
-        sprintf(buffer, "Number %f Base %d finite %s", number, base, s);
-        (*results)[i] = strdup(buffer);
+        char* msg = malloc(256);
+        if (!msg) {
+                for (int j = 0; j < i; ++j)
+                free((*results)[j]);
+            free(*results);
+            va_end(numbers);
+            return Memory_leak;
+        }
+        if (flag) {
+            sprintf(msg, "Fraction %lf does not have a finite representation in base %d.\n", number, base);
+        } else {
+            sprintf(msg, "Fraction %lf has a finite representation in base %d.\n", number, base);
+        }
+        (*results)[i] = msg;
     }
     va_end(numbers);
     return 0;
