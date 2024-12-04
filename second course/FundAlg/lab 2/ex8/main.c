@@ -8,14 +8,21 @@ int main() {
         return Memory_leak;
     }
 
-    int err = sum(36, 3, &result, "Z", "ABC4", "0986");
-    if (err) {
-        printf("Error: %d\n", err);
-        free(result);
-        return err;
-    }
-    printf("Sum: %s\n", result);
+    int err = sum(36, 3, &result, "00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000ZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZZ", "ABC4", "0986");
 
-    free(result);
-    return 0;
+    switch (err) {
+        case Invalid_input:
+            printf("Invalid input");
+            free(result);
+            return Invalid_input;
+        case Memory_leak:
+            free(result);
+            printf("Memory leak");
+            return Invalid_input;
+
+        default:
+            printf("Sum: %s\n", result);
+            free(result);
+            return 0;
+    }
 }

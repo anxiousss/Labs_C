@@ -112,36 +112,97 @@ int addition(int base, char* a, char* b, char* result) {
     free(temp_result);
     return 0;
 }
+#include "solution.h"
+
+// ... (previous function definitions remain the same)
+
+int is_valid_number(int base, const char* number) {
+    if (base < 2 || base > 36) {
+        return 0; // Invalid base
+    }
+
+    int i = 0;
+    if (number[0] == '-') {
+        i = 1;
+    }
+
+    for (; number[i] != '\0'; ++i) {
+        int digit = get_digit(number[i]);
+        if (digit == Invalid_input || digit >= base) {
+            return 0;
+        }
+    }
+
+    return 1;
+}
 
 int sum(int base, int n, char** result, ...) {
     va_list numbers;
     va_start(numbers, result);
 
-    char* num = va_arg(numbers, char*);
-    char* temp_sum = strdup(num);
-    if (!temp_sum) {
+    char** num_array = (char**)malloc(n * sizeof(char*));
+    if (!num_array) {
         va_end(numbers);
         return Memory_leak;
     }
 
-    for (int i = 1; i < n; i++) {
-        char* next_num = va_arg(numbers, char*);
-        char* new_sum = (char*)malloc((len(temp_sum) + len(next_num) + 2) * sizeof(char));
-        if (!new_sum) {
-            free(temp_sum);
+    for (int i = 0; i < n; i++) {
+        char* num = va_arg(numbers, char*);
+        num_array[i] = strdup(num);
+        if (!num_array[i]) {
+            for (int j = 0; j < i; j++) {
+                free(num_array[j]);
+            }
+            free(num_array);
             va_end(numbers);
             return Memory_leak;
         }
-        addition(base, temp_sum, next_num, new_sum);
+    }
+    va_end(numbers);
+
+    for (int i = 0; i < n; i++) {
+        if (!is_valid_number(base, num_array[i])) {
+            for (int j = 0; j < n; j++) {
+                free(num_array[j]);
+            }
+            free(num_array);
+            return Invalid_input;
+        }
+    }
+
+    char* temp_sum = strdup(num_array[0]);
+    if (!temp_sum) {
+        for (int j = 0; j < n; j++) {
+            free(num_array[j]);
+        }
+        free(num_array);
+        return Memory_leak;
+    }
+
+    for (int i = 1; i < n; i++) {
+        char* new_sum = (char*)malloc((len(temp_sum) + len(num_array[i]) + 2) * sizeof(char));
+        if (!new_sum) {
+            free(temp_sum);
+            for (int j = 0; j < n; j++) {
+                free(num_array[j]);
+            }
+            free(num_array);
+            return Memory_leak;
+        }
+        addition(base, temp_sum, num_array[i], new_sum);
         free(temp_sum);
         temp_sum = new_sum;
     }
-
-    va_end(numbers);
 
     if (*result) {
         free(*result);
     }
     *result = temp_sum;
+
+    for (int j = 0; j < n; j++) {
+        free(num_array[j]);
+    }
+    free(num_array);
+
     return 0;
 }
