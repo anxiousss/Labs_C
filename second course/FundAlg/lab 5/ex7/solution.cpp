@@ -1,7 +1,9 @@
 #include "solution.h"
 
+#include <utility>
 
-Product::Product(const std::string &name, double weight, double price, unsigned int storage_period): name{name}, weight(weight), price(price), storage_period(storage_period){
+
+Product::Product(std::string name, double weight, double price, unsigned int storage_period): name{std::move(name)}, weight(weight), price(price), storage_period(storage_period){
     ++counter;
     id = counter;
 }
@@ -98,12 +100,10 @@ void BuildingMaterial::display_info() const {
 }
 
 
-Warehouse::Warehouse(const std::vector<Product*>& products_vector) {
-    products = products_vector;
-}
+Warehouse::Warehouse(std::vector<std::shared_ptr<Product>>& products_vector): products(std::move(products_vector)) {}
 
-void Warehouse::push_back(Product &product) {
-    products.push_back(&product);
+void Warehouse::push_back(std::shared_ptr<Product>& product) {
+    products.push_back(product);
 }
 
 void Warehouse::remove(unsigned int id) {
@@ -121,7 +121,7 @@ double Warehouse::calculate_storage_fee() {
 std::vector<PerishableProduct> Warehouse::getExpiringProducts( unsigned int days) {
     std::vector<PerishableProduct> expiring_products;
     for (const auto& product: products) {
-        if (auto* perishableProduct = dynamic_cast<PerishableProduct*>(product)) {
+        if (auto perishableProduct = std::dynamic_pointer_cast<PerishableProduct>(product)) {
             double diff = difftime(time(nullptr), perishableProduct->expriation_date) / 60 / 60 / 24;
             if (diff < days) {
                 expiring_products.push_back(*perishableProduct);
@@ -131,7 +131,7 @@ std::vector<PerishableProduct> Warehouse::getExpiringProducts( unsigned int days
     return expiring_products;
 }
 
-Warehouse& Warehouse::operator+=(Product &product) {
+Warehouse& Warehouse::operator+=(std::shared_ptr<Product>& product) {
     Warehouse::push_back(product);
     return *this;
 }
@@ -141,7 +141,7 @@ Warehouse& Warehouse::operator-=(unsigned int id) {
     return *this;
 }
 
-Product* Warehouse::operator[](unsigned int id) {
+std::shared_ptr<Product> Warehouse::operator[](unsigned int id) {
     for (const auto& product: products) {
         if (product->id == id) {
             return product;
@@ -152,7 +152,7 @@ Product* Warehouse::operator[](unsigned int id) {
 
 void Warehouse::find_perishables() {
     for (const auto& product: products) {
-        if (auto* perishableProduct = dynamic_cast<PerishableProduct*>(product)) {
+        if (auto perishableProduct = std::dynamic_pointer_cast<PerishableProduct>(product)) {
             perishableProduct->display_info();
             std::cout << std::endl;
         }
@@ -161,8 +161,8 @@ void Warehouse::find_perishables() {
 
 void Warehouse::find_electronic() {
     for (const auto& product: products) {
-        if (auto* perishableProduct = dynamic_cast<ElectronicProduct*>(product)) {
-            perishableProduct->display_info();
+        if (auto electronicProduct = std::dynamic_pointer_cast<ElectronicProduct>(product)) {
+            electronicProduct->display_info();
             std::cout << std::endl;
         }
     }
@@ -170,8 +170,8 @@ void Warehouse::find_electronic() {
 
 void Warehouse::find_building() {
     for (const auto& product: products) {
-        if (auto* perishableProduct = dynamic_cast<BuildingMaterial*>(product)) {
-            perishableProduct->display_info();
+        if (auto buildingMaterial = std::dynamic_pointer_cast<BuildingMaterial>(product)) {
+            buildingMaterial->display_info();
             std::cout << std::endl;
         }
     }
@@ -186,7 +186,7 @@ void Warehouse::display_inventory() {
     find_building();
 }
 
-std::ostream& operator<<(std::ostream& ostream, Warehouse warehouse) {
+std::ostream& operator<<(std::ostream& ostream,  Warehouse warehouse) {
     warehouse.display_inventory();
     return ostream;
 }

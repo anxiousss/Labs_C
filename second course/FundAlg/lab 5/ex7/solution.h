@@ -6,6 +6,7 @@
 #include <cstring>
 #include <vector>
 #include <ctime>
+#include <memory>
 
 #define DAY_MULTIPLITER 0.3
 #define FLAMMABILITY_MULTIPLIER 1.3
@@ -21,7 +22,7 @@ public:
     unsigned int storage_period;
 
 
-    Product(const std::string& name,double weight, double price, unsigned int storage_period);
+    Product(std::string  name,double weight, double price, unsigned int storage_period);
 
     Product(const Product& product);
 
@@ -82,11 +83,11 @@ public:
 
 class Warehouse {
 public:
-    std::vector<Product*> products;
+    std::vector<std::shared_ptr<Product>> products;
 
-    explicit Warehouse(const    std::vector<Product*>& products_vector);
+    explicit Warehouse(std::vector<std::shared_ptr<Product>>& products_vector);
 
-    void push_back(Product& product);
+    void push_back(std::shared_ptr<Product>& product);
 
     void remove(unsigned int id);
 
@@ -102,11 +103,11 @@ public:
 
     void display_inventory();
 
-    Warehouse& operator+=(Product& product);
+    Warehouse& operator+=(std::shared_ptr<Product>& product);
 
     Warehouse& operator-=(  unsigned int id);
 
-    Product* operator[](unsigned int id);
+    std::shared_ptr<Product>  operator[](unsigned int id);
 
 };
 
