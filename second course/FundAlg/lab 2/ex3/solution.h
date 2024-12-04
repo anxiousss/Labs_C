@@ -1,4 +1,3 @@
-
 #ifndef SOLUTION_H
 #define SOLUTION_H
 
@@ -8,10 +7,11 @@
 #include <string.h>
 
 typedef enum Errors {
-    Invalid_input = 2,
-    Memory_leak
+    Success = 0,
+    Invalid_input = 1,
+    Memory_allocation_error = 2,
+    File_open_error = 3
 } Errors;
-
 
 struct Search {
     int num_line;
@@ -30,15 +30,10 @@ struct Vector {
 typedef struct Vector Vector;
 
 Vector* init_vector(int size);
-
 void free_vector(Vector* v);
-
 void push(Vector* v, Search search);
-
 void update(Vector* v, const char* sub, int ch);
+void check_search(Vector* v, int len, char** results, int* result_count, char* file);
+int FindFiles(char* sub, int amount, char*** results, int* total_results, ...);
 
-void check_search(Vector* v, int len, char** result, int* result_count, char* file);
-
-char** FindFiles(char * sub, int amount, int* total_results, ...);
-
-#endif //SOLUTION_H
+#endif // SOLUTION_H

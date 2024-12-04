@@ -2,16 +2,31 @@
 
 int main() {
     int total_results;
-    char** results = FindFiles("\tq\n\t", 2, &total_results, "1.txt", "2.txt");
+    char** results = NULL;
 
-    if (!results) {
-        printf("Memory allocation failed\n");
-        return Memory_leak;
+    int error = FindFiles("s\r\nd\r\nr", 2, &results, &total_results, "1.txt", "2.txt");
+
+    switch(error) {
+        case Success:
+            for (int i = 0; i < total_results; i++) {
+                printf("%s", results[i]);
+                free(results[i]);
+            }
+            free(results);
+            break;
+        case Invalid_input:
+            printf("Invalid input\n");
+            break;
+        case Memory_allocation_error:
+            printf("Memory allocation failed\n");
+            break;
+        case File_open_error:
+            printf("File open error\n");
+            break;
+        default:
+            printf("Unknown error\n");
+            break;
     }
-    for (int i = 0; i < total_results; i++) {
-        printf("%s", results[i]);
-        free(results[i]);
-    }
-    free(results);
+
     return 0;
 }

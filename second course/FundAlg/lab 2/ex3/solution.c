@@ -4,8 +4,9 @@ Vector* init_vector(int size) {
     Vector* vector = (Vector*)malloc(sizeof(Vector));
     if (!vector)
         return NULL;
+
     vector->size = 0;
-    vector->capacity = size;    
+    vector->capacity = size;
     vector->data = (Search*)malloc(sizeof(Search) * size);
     if (!vector->data) {
         free(vector);
@@ -63,26 +64,34 @@ void check_search(Vector* v, int len, char** results, int* result_count, char* f
     v->size = pos;
 }
 
-char** FindFiles(char* sub, int amount, int* total_results, ...) {
+int FindFiles(char* sub, int amount, char*** results, int* total_results, ...) {
     va_list files;
     va_start(files, total_results);
-    char** results = (char**)malloc(sizeof(char*) * 1000);
-    if (!results)
-        return NULL;
+    *results = NULL;
     *total_results = 0;
+
+    *results = (char**)malloc(sizeof(char*) * 1000);
+    if (!results)
+        return Memory_allocation_error;
 
     for (int i = 0; i < amount; i++) {
         char* filename = va_arg(files, char*);
         FILE* file = fopen(filename, "r");
         if (!file) {
-            free(results);
-            return NULL;
+            free(*results);
+            *results = NULL;
+            *total_results = 0;
+            va_end(files);
+            return File_open_error;
         }
         Vector* v = init_vector(10);
         if (!v) {
             fclose(file);
-            free(results);
-            return NULL;
+            free(*results);
+            *results = NULL;
+            *total_results = 0;
+            va_end(files);
+            return Memory_allocation_error;
         }
         int l = strlen(sub);
 
@@ -97,7 +106,7 @@ char** FindFiles(char* sub, int amount, int* total_results, ...) {
                 push(v, search);
             }
             update(v, sub, ch);
-            check_search(v, l, results, total_results, filename);
+            check_search(v, l, *results, total_results, filename);
             if (ch == '\n') {
                 num_line++;
                 num_char = 0;
@@ -107,6 +116,5 @@ char** FindFiles(char* sub, int amount, int* total_results, ...) {
         fclose(file);
     }
     va_end(files);
-    return results;
+    return Success;
 }
-
