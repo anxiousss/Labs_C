@@ -1,17 +1,14 @@
 #include "solution.h"
 
-#include <utility>
-
-
 Product::Product(std::string name, double weight, double price, unsigned int storage_period): name{std::move(name)}, weight(weight), price(price), storage_period(storage_period){
-    ++counter;
     id = counter;
+    ++counter;
 }
 
 Product::Product(const Product& product) {
     name = product.name;
-    ++counter;
     id = counter;
+    ++counter;
     weight = product.weight;
     price = product.price;
     storage_period = product.storage_period;
@@ -19,8 +16,8 @@ Product::Product(const Product& product) {
 
 Product& Product::operator=(const Product &product) {
     name = product.name;
-    ++counter;
     id = counter;
+    ++counter;
     weight = product.weight;
     price = product.price;
     storage_period = product.storage_period;

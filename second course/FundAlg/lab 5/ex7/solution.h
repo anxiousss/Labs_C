@@ -85,7 +85,7 @@ class Warehouse {
 public:
     std::vector<std::shared_ptr<Product>> products;
 
-    explicit Warehouse(std::vector<std::shared_ptr<Product>>& products_vector);
+    explicit Warehouse( std::vector<std::shared_ptr<Product>>& products_vector);
 
     void push_back(std::shared_ptr<Product>& product);
 
