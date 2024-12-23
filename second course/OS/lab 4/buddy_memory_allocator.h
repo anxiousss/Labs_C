@@ -2,13 +2,14 @@
 #ifndef OS4_BUDDY_MEMORY_ALLOCATOR_H
 #define OS4_BUDDY_MEMORY_ALLOCATOR_H
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <sys/mman.h>
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdalign.h>
 #include <stddef.h>
+#include <string.h>
+
+#include "default_allocator.h"
 
 
 typedef struct Block {
@@ -22,17 +23,16 @@ typedef struct Block {
 } Block;
 
 typedef struct BuddyAllocator {
+    Allocator allocator;
     Block *root;
-    void *tree_node_pool;
-    size_t tree_node_pool_size;
     Block *free_tree_nodes; // Free list for tree nodes
 } BuddyAllocator;
 
-BuddyAllocator *buddy_allocator_create(size_t initial_size, size_t tree_node_pool_size);
+Allocator* buddy_allocator_create(void* memory, const size_t size);
 
 Block *allocate_tree_node(BuddyAllocator *allocator);
 
-void deallocate_tree_node(BuddyAllocator *allocator, Block *node);
+void deallocate_tree_node(Block *node);
 
 void insert_block(Block **root, Block *new_block);
 
@@ -50,11 +50,11 @@ void merge_blocks(BuddyAllocator *allocator, Block *block);
 
 Block* find_block(Block* root, void* ptr);
 
-void *buddy_allocator_alloc(BuddyAllocator *allocator, size_t size);
+void *buddy_allocator_alloc(Allocator *allocator, size_t size);
 
-void buddy_allocator_free(BuddyAllocator *allocator, void *ptr);
+void buddy_allocator_free(Allocator *allocator, void *ptr);
 
-void buddy_allocator_destroy(BuddyAllocator* allocator);
+void buddy_allocator_destroy(Allocator * allocator);
 
 
 #endif //OS4_BUDDY_MEMORY_ALLOCATOR_H

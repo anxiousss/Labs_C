@@ -2,8 +2,7 @@
 #ifndef OS4_FREE_LIST_ALLOCATOR_H
 #define OS4_FREE_LIST_ALLOCATOR_H
 
-#include <stdlib.h>
-#include <sys/mman.h>
+#include "default_allocator.h"
 
 typedef struct Node {
     void* value;
@@ -12,15 +11,16 @@ typedef struct Node {
 }Node;
 
 typedef struct {
+    Allocator allocator;
     Node* head;
 } List;
 
-List * free_list_allocator_create(void* const memory, const size_t size);
+Allocator* free_list_allocator_create(void* const memory, const size_t size);
 
-void free_list_allocator_destroy(List* const list);
+void free_list_allocator_destroy(Allocator* const allocator);
 
-void* free_list_allocator_alloc(List* list, ssize_t size);
+void* free_list_allocator_alloc(Allocator * allocator, ssize_t size);
 
-void free_list_allocator_free(Node* const node, void* memory);
+void free_list_allocator_free(Allocator* const allocator, void* memory);
 
 #endif //OS4_FREE_LIST_ALLOCATOR_H
