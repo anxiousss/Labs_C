@@ -5,6 +5,19 @@ Allocator* free_list_allocator_create(void* const memory, const size_t size) {
     if (list == MAP_FAILED)
         return NULL;
 
+    list->head = mmap(NULL, sizeof(Node*), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (list->head == MAP_FAILED) {
+        munmap(list, sizeof(List));
+        return NULL;
+    }
+    if (memory == NULL) {
+        list->head->value = mmap(NULL, sizeof(void *), PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (!list->head->value) {
+            munmap(list->head->value, sizeof(void*));
+            munmap(list, sizeof(List));
+            return NULL;
+        }
+    }
     list->head->value = memory;
     list->head->size = size;
     return list;

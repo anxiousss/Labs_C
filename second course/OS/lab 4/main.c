@@ -52,5 +52,10 @@ int main(int argc, char** argv) {
         dlclose(library);
     }
 
+    int a = 5;
+    Allocator* allocator = allocator_create(NULL, sizeof(int));
+    int* b = allocator_alloc(allocator, sizeof(int));
+    allocator_free(allocator, b);
+    allocator_destroy(allocator);
     return 0;
 }
