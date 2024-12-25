@@ -5,32 +5,44 @@ Allocator* free_list_allocator_create(void* const memory, const size_t size) {
     if (list == MAP_FAILED)
         return NULL;
 
-    list->head = mmap(NULL, sizeof(Node*), PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    list->head = mmap(NULL, sizeof(Node)    , PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (list->head == MAP_FAILED) {
         munmap(list, sizeof(List));
         return NULL;
     }
     if (memory == NULL) {
-        list->head->value = mmap(NULL, sizeof(void *), PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        list->head->value = mmap(NULL, size, PROT_WRITE | PROT_READ, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
         if (!list->head->value) {
-            munmap(list->head->value, sizeof(void*));
             munmap(list, sizeof(List));
             return NULL;
         }
+    } else {
+        list->head->value = memory;
+        list->head->size = size;
+        list->head->next = NULL;
     }
-    list->head->value = memory;
-    list->head->size = size;
-    return list;
-};
+    return (Allocator*)list;
+}
 
 void free_list_allocator_free(Allocator * const allocator, void* memory) {
     List* list = (List*)allocator;
     Node* cur = list->head;
-    while (cur->next->value != memory) {
-        cur = cur->next;
+
+    Node* prev = NULL;
+    while (cur) {
+        if (cur->next && cur->next != memory) {
+          prev = cur;
+          cur = cur->next;
+          } else if (cur->next == memory) {
+              prev = cur->next->next;
+              munmap(cur->next->value, cur->next->size);
+              munmap(cur->next, sizeof(Node));
+          } else {
+            return;
+        }
     }
-    munmap(memory, cur->next->size);
 }
+
 
 void* free_list_allocator_alloc(Allocator* allocator, ssize_t size) {
     List* list = (List*)allocator;
@@ -47,7 +59,8 @@ void* free_list_allocator_alloc(Allocator* allocator, ssize_t size) {
         return NULL;
     }
     cur->next->size = size;
-    return cur->next;
+    cur->next->next = NULL;
+    return cur->next->value;
 }
 
 void free_list_allocator_destroy(Allocator * const allocator) {

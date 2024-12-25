@@ -1,13 +1,18 @@
 #include "default_allocator.h"
 
 Allocator* emergency_allocator_create(void *const memory, const size_t size){
-    EmergencyAllocator* allocator = mmap(NULL, sizeof(Allocator), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    EmergencyAllocator* allocator = mmap(NULL, sizeof(EmergencyAllocator), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (allocator == MAP_FAILED)
         return NULL;
 
-    allocator->memory = memory;
+    if (memory == NULL) {
+        allocator->memory = mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    } else {
+        allocator->memory = memory;
+    }
+
     allocator->size = size;
-    return allocator;
+    return (Allocator*)allocator;
 }
 
 void emergency_allocator_free(Allocator *const allocator, void *const memory) {
@@ -17,7 +22,7 @@ void emergency_allocator_free(Allocator *const allocator, void *const memory) {
 
 void emergency_allocator_destroy(Allocator *const allocator) {
     EmergencyAllocator* tmp_allocator = (EmergencyAllocator*)allocator;
-    emergency_allocator_free(tmp_allocator, tmp_allocator->memory);
+    emergency_allocator_free((Allocator*)tmp_allocator, tmp_allocator->memory);
     munmap(tmp_allocator, sizeof(EmergencyAllocator));
 }
 
