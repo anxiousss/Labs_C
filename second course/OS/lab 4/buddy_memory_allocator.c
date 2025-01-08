@@ -1,6 +1,6 @@
 #include "buddy_memory_allocator.h"
 
-Allocator *buddy_allocator_create(void* memory, const size_t size) {
+Allocator* buddy_allocator_create(void* memory, const size_t size) {
     BuddyAllocator *allocator = mmap(NULL, sizeof(BuddyAllocator), PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
     if (allocator == MAP_FAILED) {
         return NULL;
@@ -17,11 +17,9 @@ Allocator *buddy_allocator_create(void* memory, const size_t size) {
         memory_pool = memory;
     }
 
-
-
     // Initialize the root block
     Block *initial_block = (Block *)memory_pool;
-    initial_block->start = (void *)((char *)memory_pool + sizeof(Block));
+    initial_block->start = (void *)((uintptr_t)memory_pool + sizeof(Block));
     initial_block->size = size - sizeof(Block);
     initial_block->is_free = 1;
     initial_block->left = NULL;
@@ -30,10 +28,10 @@ Allocator *buddy_allocator_create(void* memory, const size_t size) {
     initial_block->next_free = NULL;
 
     allocator->root = initial_block;
+    allocator->free_tree_nodes = NULL;
 
-    return allocator;
+    return (Allocator*) allocator;
 }
-
 
 Block *allocate_tree_node(BuddyAllocator *allocator) {
     if (allocator->free_tree_nodes == NULL) {
@@ -44,8 +42,9 @@ Block *allocate_tree_node(BuddyAllocator *allocator) {
     return node;
 }
 
-void deallocate_tree_node(Block *node) {
-    node->is_free = 1;
+void deallocate_tree_node(BuddyAllocator *allocator, Block *node) {
+    node->next_free = allocator->free_tree_nodes;
+    allocator->free_tree_nodes = node;
 }
 
 void insert_block(Block **root, Block *new_block) {
@@ -139,25 +138,27 @@ Block *find_smallest_free_block(Block *root, size_t size) {
 }
 
 void merge_blocks(BuddyAllocator *allocator, Block *block) {
-    // Merge with previous block if it's free
+    if (block == NULL || !block->is_free) {
+        return;
+    }
+
     Block *prev = find_previous_block(allocator->root, block);
     if (prev && prev->is_free) {
         prev->size += block->size;
         if (block->right)
             block->right->parent = prev;
         remove_block(allocator->root, block);
-        deallocate_tree_node(block);
+        deallocate_tree_node(allocator, block);
         block = prev;
     }
 
-    // Merge with next block if it's free
     Block *next = find_next_block(allocator->root, block);
     if (next && next->is_free) {
         block->size += next->size;
         if (next->right)
             next->right->parent = block;
         remove_block(allocator->root, next);
-        deallocate_tree_node(next);
+        deallocate_tree_node(allocator, next);
     }
 }
 
@@ -177,7 +178,6 @@ Block* find_block(Block* root, void* ptr) {
     else
         return NULL;
 }
-
 
 void *buddy_allocator_alloc(Allocator *allocator, size_t size) {
     BuddyAllocator* buddyAllocator = (BuddyAllocator*)allocator;
@@ -206,10 +206,8 @@ void *buddy_allocator_alloc(Allocator *allocator, size_t size) {
         new_block->parent = block;
         new_block->next_free = NULL;
 
-        // Insert the new block into the tree
         insert_block(&buddyAllocator->root, new_block);
 
-        // Update the original block
         block->size = aligned_size;
         block->is_free = 0;
 
@@ -219,6 +217,7 @@ void *buddy_allocator_alloc(Allocator *allocator, size_t size) {
         return block->start;
     }
 }
+
 void buddy_allocator_free(Allocator *allocator, void *ptr) {
     BuddyAllocator* buddyAllocator = (BuddyAllocator*)allocator;
 
@@ -233,22 +232,28 @@ void buddy_allocator_free(Allocator *allocator, void *ptr) {
     merge_blocks(buddyAllocator, block);
 
     if (block->is_free && block->left == NULL && block->right == NULL) {
-        munmap(block->start, block->size);
+        if (block->start != buddyAllocator->root->start) {
+            munmap(block->start, block->size);
+        }
         remove_block(buddyAllocator->root, block);
-        deallocate_tree_node(   block);
+        deallocate_tree_node(buddyAllocator, block);
     }
 }
+
 void buddy_allocator_destroy(Allocator* allocator) {
     BuddyAllocator* buddyAllocator = (BuddyAllocator*)allocator;
     if (buddyAllocator == NULL) {
         return;
     }
-    // Unmap all blocks
+
     Block* current = buddyAllocator->root;
     while (current != NULL) {
         Block* next = current->right;
-        munmap(current->start, current->size);
+        if (current != buddyAllocator->root) {
+            munmap(current->start, current->size);
+        }
         current = next;
     }
-        munmap(buddyAllocator, sizeof(BuddyAllocator));
+
+    munmap(buddyAllocator, sizeof(BuddyAllocator));
 }
