@@ -58,15 +58,21 @@ int init_users(Users** users, size_t capacity, size_t size) {
     if (!*users) {
         return Memory_leak;
     }
+    (*users)->data = (User*)(malloc(sizeof(User) * capacity));
+    if (!(*users)->data) {
+        free(*users);
+        return Memory_leak;
+    }
     (*users)->capacity = capacity;
     (*users)->size = size;
-    return 1;
+    return 0;
 }
 
-int sign_up(Users* users) {
+int sign_up(Users* users, int* login_index) {
     User user;
     user.login = (char*)malloc(sizeof(char ) * (MAX_LEN + 1));
     if (!user.login) {
+        users_destroy(users);
         return Memory_leak;
     }
     printf("Sign up\n");
@@ -101,17 +107,19 @@ int sign_up(Users* users) {
     if (users->capacity == users->size) {
         User* user_tmp = (User*)realloc(users->data, users->capacity * 2 * sizeof(User));
         if (!user_tmp) {
+            users_destroy(users);
             return Memory_leak;
         }
         users->capacity *= 2;
         users->data = user_tmp;
     }
     users->data[users->size] = user;
+    *login_index = users->size;
     ++users->size;
-    return 1;
+    return 0;
 }
 
-int sign_in(Users* users) {
+int sign_in(Users* users, int* login_index) {
     printf("Sign in");
     printf("Enter a login: ");
     char* login = NULL;
@@ -131,7 +139,9 @@ int sign_in(Users* users) {
     }
     for (int i = 0; i < users->capacity; ++i) {
         if (strcmp(users->data[i].login, login) == 0 && users->data[i].pin == pin) {
-            return 1;
+            *login_index = i;
+            users->data[i].sanctions = -1;
+            return 0;
         }
     }
     printf("Wrong login or pass");
@@ -139,26 +149,20 @@ int sign_in(Users* users) {
 }
 
 int get_time(char* buffer) {
-    if (!buffer) {
-        return Memory_leak;
-    }
     time_t current_time = time(NULL);
     struct tm* time_info = localtime(&current_time);
     strftime(buffer, 9, "%H:%M:%S", time_info);
-    return 1;
+    return 0;
 }
 
 int get_date(char* buffer) {
-    if (!buffer) {
-        return Memory_leak;
-    }
     time_t current_time = time(NULL);
     struct tm* time_info = localtime(&current_time);
     strftime(buffer, 11, "%d:%m:%Y", time_info);
-    return 1;
+    return 0;
 }
 
-int howmuch_time(const char* date, const char*   flag, double* diff) {
+int howmuch_time(const char* date, const char* flag, double* diff) {
     struct tm user_date ={0};
 
     if (sscanf(date, "%d:%d:%d", &user_date.tm_mday, &user_date.tm_mon, &user_date.tm_year) != 3 ||
@@ -171,7 +175,7 @@ int howmuch_time(const char* date, const char*   flag, double* diff) {
 
     time_t user_time = mktime(&user_date);
     if (user_time == -1) {
-        return 2;
+        return Wrong_input;
     }
 
     time_t current_time;
@@ -189,7 +193,7 @@ int howmuch_time(const char* date, const char*   flag, double* diff) {
     } else {
         return Wrong_input;
     }
-    return 1;
+    return 0;
 }
 
 int sacntions(Users* users, char* login, int number) {
@@ -200,7 +204,7 @@ int sacntions(Users* users, char* login, int number) {
         for (int i = 0; i < users->size; ++i) {
             if (strcmp(users->data[i].login, login) == 0) {
                 users->data[i].sanctions = number;
-                return 1;
+                return 0;
             }
         }
         return Wrong_input;
@@ -210,15 +214,17 @@ int sacntions(Users* users, char* login, int number) {
 
 
 void users_destroy(Users* users) {
+    if (!users) return;
     for (int i = 0; i < users->size; ++i) {
         free(users->data[i].login);
     }
+    free(users->data);
     free(users);
 }
 
 int load(const char* filename, Users* users) {
     if (!filename || !users) {
-        return -1;
+        return Null_pointer_error;
     }
     FILE* fin = fopen(filename, "rb");
     if (!fin) {
@@ -230,6 +236,7 @@ int load(const char* filename, Users* users) {
         if (users->capacity == users->size) {
             User* user_tmp = (User*)realloc(users->data, users->capacity * 2 * sizeof(User));
             if (!user_tmp) {
+                users_destroy(users);
                 fclose(fin);
                 return Memory_leak;
             }
@@ -240,12 +247,12 @@ int load(const char* filename, Users* users) {
         users->size++;
     }
     fclose(fin);
-    return 1;
+    return 0;
 }
 
 int save(const char* filename, Users* users) {
     if (!filename || !users) {
-        return -1;
+        return Null_pointer_error;
     }
     FILE* fin = fopen(filename, "wb");
     if (!fin) {
@@ -254,5 +261,5 @@ int save(const char* filename, Users* users) {
 
     fwrite(users->data, users->size, sizeof(User), fin);
     fclose(fin);
-    return 1;
+    return 0;
 }

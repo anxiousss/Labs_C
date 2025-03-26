@@ -10,24 +10,15 @@
 
 #define MAX_LEN 6
 #define SECRET_PASS 12345
+#define EXIT (-1)
 
 typedef enum Errors {
     Wrong_input = 2,
     Memory_leak,
     Invalid_code,
-    File_error
+    File_error,
+    Null_pointer_error
 } Errors;
-
-typedef enum Command {
-    SIGN_IN = 1,
-    SIGN_UP,
-    TIME,
-    DATE,
-    HOWMUCH_TIME,
-    LOGOUT,
-    SANCTIONS,
-    UNKNOWN
-} Command;
 
 typedef struct User {
     char* login;
@@ -41,7 +32,6 @@ typedef struct Users {
     size_t size;
 } Users;
 
-int read_choice(int* choice);
 
 int read_line(char** result);
 
@@ -55,9 +45,9 @@ int check_login(const char* login);
 
 int check_pin(const int* pin);
 
-int sign_up(Users* users);
+int sign_up(Users* users, int* login_index);
 
-int sign_in(Users* users);
+int sign_in(Users* users, int* login_index);
 
 int get_time(char* buffer);
 
@@ -71,7 +61,7 @@ void users_destroy(Users* users);
 
 void print_menu();
 
-int handle_choice(char* choice, Users* users);
+int handle_choice(char* choice, Users* users, int* flag, const int* n_commands, int* login_index);
 
 int dialog_manager();
 

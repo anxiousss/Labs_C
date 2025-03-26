@@ -15,6 +15,9 @@ int main() {
         case File_error:
             printf("File error");
             return File_error;
+        case Null_pointer_error:
+            printf("Null pointer error");
+            return Null_pointer_error;
         default:
             return 0;
     }
