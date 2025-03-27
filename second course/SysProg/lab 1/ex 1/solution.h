@@ -63,7 +63,7 @@ void users_destroy(Users* users);
 
 void print_menu();
 
-int handle_choice(char* choice, Users* users, int* flag, const int* n_commands, int* login_index);
+int handle_choice(char* choice, Users* users, int* flag, int* n_commands, int* login_index);
 
 int dialog_manager();
 

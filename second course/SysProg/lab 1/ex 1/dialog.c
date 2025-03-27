@@ -8,9 +8,10 @@ void print_menu() {
     printf("5 - Howmuch <time> flag\n");
     printf("6 - Logout\n");
     printf("7 - Sanctions\n");
+    printf("8 - Exit\n");
 }
 
-int handle_choice(char* choice, Users* users, int* flag, const int* n_commands, int* login_index) {
+int handle_choice(char* choice, Users* users, int* flag, int* n_commands, int* login_index) {
     if (strcmp(choice, "Exit") == 0) {
         return EXIT;
     }
@@ -19,11 +20,15 @@ int handle_choice(char* choice, Users* users, int* flag, const int* n_commands, 
     if (*flag == 0) {
         if (strcmp(choice, "Sign In") == 0) {
             err = sign_in(users, login_index);
-            *flag = 1;
+            if (err == 0) {
+                *flag = 1;
+            }
             return err;
         } else if (strcmp(choice, "Sign Up") == 0) {
             err = sign_up(users, login_index);
-            *flag = 1;
+            if (err == 0) {
+                *flag = 1;
+            }
             return err;
         }
     }
@@ -33,6 +38,11 @@ int handle_choice(char* choice, Users* users, int* flag, const int* n_commands, 
         return Wrong_input;
     }
 
+    if (strcmp(choice, "Logout") == 0) {
+        *flag = 0;
+        *n_commands = 0;
+        return 0;
+    }
     if (*flag == 1 && (*n_commands <= users->data[*login_index].sanctions || users->data[*login_index].sanctions == -1)) {
         if (strcmp(choice, "Time") == 0) {
             char buf[11];
@@ -59,9 +69,7 @@ int handle_choice(char* choice, Users* users, int* flag, const int* n_commands, 
             err = howmuch_time(time, time_flag, &diff);
             if (err)
                 return err;
-            printf("%f", diff);
-        } else if (strcmp(choice, "Logout") == 0) {
-            *flag = 0;
+            printf("%f\n", diff);
         } else if (strncmp(choice, "Sanctions", 9) == 0) {
             char login[7];
             int n_sanctions;
@@ -72,12 +80,13 @@ int handle_choice(char* choice, Users* users, int* flag, const int* n_commands, 
             err = sacntions(users, login, n_sanctions);
             if (err)
                 return err;
-        } else if (strcmp(choice, "Exit") == 0) {
-            return EXIT;
+
         } else {
             printf("Unrecognized command\n");
             return Unrecognized_command;
         }
+    } else if (*n_commands > users->data[*login_index].sanctions && *flag == 1) {
+        printf("CHEL POKA\n");
     }
     return 0;
 }
@@ -91,7 +100,7 @@ int dialog_manager() {
     err = load("database.bin", users);
     if (err)
         return err;
-    int is_authorized = 0, n_commands = 0, login_index;
+    int is_authorized = 0,  n_commands = 0, login_index;
     print_menu();
     while (1) {
         char* choice = NULL;
@@ -101,7 +110,7 @@ int dialog_manager() {
             return Memory_leak;
         }
         err = handle_choice(choice, users, &is_authorized, &n_commands, &login_index);
-        //char c = getc(stdin);
+        //  char c = getc(stdin);
         if (err == EXIT) {
             err = save("database.bin", users);
             if (err)
@@ -113,10 +122,9 @@ int dialog_manager() {
             free(choice);
             return err;
         } else if (err == Wrong_input) {
-            free(choice);
-            continue;
+            printf("Wrong input\n");
         }
-        if(is_authorized) {
+        if (is_authorized && users->data[login_index].sanctions != -1 && strcmp(choice, "Logout") != 0) {
             ++n_commands;
         }
         free(choice);

@@ -139,7 +139,7 @@ int sign_in(Users* users, int* login_index) {
     }
     printf("Enter a pin: ");
     int pin;
-    scanf("%d\n", &pin);
+    scanf("%d", &pin);
     clear_buffer();
     if (!check_pin(&pin)) {
     printf("Invalid pin\n");
@@ -148,10 +148,11 @@ int sign_in(Users* users, int* login_index) {
     for (int i = 0; i < users->size; ++i) {
         if (strcmp(users->data[i].login, login) == 0 && users->data[i].pin == pin) {
             *login_index = i;
-            users->data[i].sanctions = -1;
+            free(login);
             return 0;
         }
     }
+    free(login);
     printf("User does not exit\n");
     return Wrong_input;
 }
@@ -208,7 +209,7 @@ int howmuch_time(const char* date, const char* flag, double* diff) {
 int sacntions(Users* users, char* login, int number) {
     int password;
     printf("ENTER A SPECIAL CODE\n");
-    scanf("%d\n", &password);
+    scanf("%d", &password);
     clear_buffer();
     if (password == SECRET_PASS) {
         for (int i = 0; i < users->size; ++i) {
@@ -233,43 +234,70 @@ void users_destroy(Users* users) {
 }
 
 int load(const char* filename, Users* users) {
-    if (!filename || !users) {
-        return Null_pointer_error;
-    }
+    if (!filename || !users) return Null_pointer_error;
     FILE* fin = fopen(filename, "rb");
-    if (!fin) {
-        return File_error;
-    }
+    if (!fin) return File_error;
 
-    User user;
-    while (fread(&user, 1, sizeof(user), fin)) {
-        if (users->capacity == users->size) {
-            User* user_tmp = (User*)realloc(users->data, users->capacity * 2 * sizeof(User));
-            if (!user_tmp) {
-                users_destroy(users);
+    while (1) {
+        size_t login_len;
+        if (fread(&login_len, sizeof(size_t), 1, fin) != 1) {
+            if (feof(fin)) break;
+            fclose(fin);
+            return File_error;
+        }
+
+        char* login = malloc(login_len);
+        if (!login) {
+            fclose(fin);
+            return Memory_leak;
+        }
+        if (fread(login, sizeof(char), login_len, fin) != login_len) {
+            free(login);
+            fclose(fin);
+            return File_error;
+        }
+
+        User user;
+        user.login = login;
+        if (fread(&user.pin, sizeof(int), 1, fin) != 1 ||
+            fread(&user.sanctions, sizeof(int), 1, fin) != 1) {
+            free(login);
+            fclose(fin);
+            return File_error;
+        }
+
+        if (users->size >= users->capacity) {
+            users->capacity *= 2;
+            User* tmp = realloc(users->data, users->capacity * sizeof(User));
+            if (!tmp) {
+                free(login);
                 fclose(fin);
                 return Memory_leak;
             }
-            users->capacity *= 2;
-            users->data = user_tmp;
+            users->data = tmp;
         }
-        users->data[users->size] = user;
-        users->size++;
+        users->data[users->size++] = user;
     }
     fclose(fin);
     return 0;
 }
 
 int save(const char* filename, Users* users) {
-    if (!filename || !users) {
-        return Null_pointer_error;
-    }
+    if (!filename || !users) return Null_pointer_error;
     FILE* fin = fopen(filename, "wb");
-    if (!fin) {
-        return File_error;
-    }
+    if (!fin) return File_error;
 
-    fwrite(users->data, users->size, sizeof(User), fin);
+    for (size_t i = 0; i < users->size; ++i) {
+        User *u = &users->data[i];
+        size_t login_len = strlen(u->login) + 1;
+        if (fwrite(&login_len, sizeof(size_t), 1, fin) != 1 ||
+            fwrite(u->login, sizeof(char), login_len, fin) != login_len ||
+            fwrite(&u->pin, sizeof(int), 1, fin) != 1 ||
+            fwrite(&u->sanctions, sizeof(int), 1, fin) != 1) {
+            fclose(fin);
+            return File_error;
+        }
+    }
     fclose(fin);
     return 0;
 }
