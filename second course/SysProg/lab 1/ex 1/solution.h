@@ -17,7 +17,8 @@ typedef enum Errors {
     Memory_leak,
     Invalid_code,
     File_error,
-    Null_pointer_error
+    Null_pointer_error,
+    Unrecognized_command
 } Errors;
 
 typedef struct User {
@@ -32,6 +33,7 @@ typedef struct Users {
     size_t size;
 } Users;
 
+void clear_buffer();
 
 int read_line(char** result);
 

@@ -1,5 +1,11 @@
 #include "solution.h"
 
+void clear_buffer() {
+    char c;
+    while ((c = getc(stdin)) != EOF && c != '\n')
+        ;
+}
+
 int read_line(char **result) {
     int buffer_size = 16;
     int length = 0;
@@ -36,6 +42,7 @@ int read_line(char **result) {
 
     return 0;
 }
+
 
 int check_login(const char* login) {
     if (!login) {
@@ -75,8 +82,7 @@ int sign_up(Users* users, int* login_index) {
         users_destroy(users);
         return Memory_leak;
     }
-    printf("Sign up\n");
-    printf("Enter a login: \n");
+    printf("Enter a login: ");
     char* login = NULL;
     int tmp = read_line(&login);
     if (tmp)
@@ -85,19 +91,21 @@ int sign_up(Users* users, int* login_index) {
         printf("Invalid login\n");
         return Wrong_input;
     }
-    for (int i = 0; i < users->capacity; ++i) {
+    if (users->size != 0) {
+    for (int i = 0; i < users->size; ++i) {
         if (strcmp(users->data[i].login, login) == 0) {
             printf("This login is already in use\n");
             return Wrong_input;
         }
     }
-
+}
     strncpy(user.login, login, strlen(login));
     user.login[strlen(login)] = '\0';
     free(login);
-    printf("Enter a pin: \n");
+    printf("Enter a pin: ");
     int pin;
     scanf("%d", &pin);
+    clear_buffer();
     if (!check_pin(&pin)) {
         printf("Invalid pin\n");
         return Wrong_input;
@@ -120,7 +128,6 @@ int sign_up(Users* users, int* login_index) {
 }
 
 int sign_in(Users* users, int* login_index) {
-    printf("Sign in");
     printf("Enter a login: ");
     char* login = NULL;
     int tmp = read_line(&login);
@@ -130,21 +137,22 @@ int sign_in(Users* users, int* login_index) {
         printf("Invalid login\n");
         return Wrong_input;
     }
-    printf("Enter a pin: \n");
+    printf("Enter a pin: ");
     int pin;
-    scanf("%d", &pin);
+    scanf("%d\n", &pin);
+    clear_buffer();
     if (!check_pin(&pin)) {
-        printf("Invalid pin\n");
+    printf("Invalid pin\n");
         return Wrong_input;
     }
-    for (int i = 0; i < users->capacity; ++i) {
+    for (int i = 0; i < users->size; ++i) {
         if (strcmp(users->data[i].login, login) == 0 && users->data[i].pin == pin) {
             *login_index = i;
             users->data[i].sanctions = -1;
             return 0;
         }
     }
-    printf("Wrong login or pass");
+    printf("User does not exit\n");
     return Wrong_input;
 }
 
@@ -169,6 +177,7 @@ int howmuch_time(const char* date, const char* flag, double* diff) {
         (user_date.tm_mon > 12 || user_date.tm_mon < 0) || user_date.tm_year < 0 || user_date.tm_mday < 0 || user_date.tm_mday > 30) {
         return Wrong_input;
     }
+    clear_buffer();
 
     user_date.tm_mon -= 1;
     user_date.tm_year -= 1900;
@@ -199,7 +208,8 @@ int howmuch_time(const char* date, const char* flag, double* diff) {
 int sacntions(Users* users, char* login, int number) {
     int password;
     printf("ENTER A SPECIAL CODE\n");
-    scanf("%d", &password);
+    scanf("%d\n", &password);
+    clear_buffer();
     if (password == SECRET_PASS) {
         for (int i = 0; i < users->size; ++i) {
             if (strcmp(users->data[i].login, login) == 0) {
