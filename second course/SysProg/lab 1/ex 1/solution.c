@@ -2,8 +2,7 @@
 
 void clear_buffer() {
     char c;
-    while ((c = getc(stdin)) != EOF && c != '\n')
-        ;
+    while ((c = fgetc(stdin)) != EOF && c != '\n');
 }
 
 int read_line(char **result) {
@@ -37,7 +36,7 @@ int read_line(char **result) {
     *result = buffer;
 
     if (ch != '\n' && ch != EOF) {
-        while ((ch = fgetc(stdin)) != '\n' && ch != EOF);
+        clear_buffer();
     }
 
     return 0;
@@ -45,13 +44,9 @@ int read_line(char **result) {
 
 
 int check_login(const char* login) {
-    if (!login) {
-        return 0;
-    }
+    if (!login) return 0;
     for (int i = 0; login[i]; ++i) {
-        if (i > 6 || isalnum(login[i] == 0)) {
-            return 0;
-        }
+        if (i >= MAX_LEN || !isalnum(login[i])) return 0;
     }
     return 1;
 }
@@ -92,9 +87,10 @@ int sign_up(Users* users, int* login_index) {
         return Wrong_input;
     }
     if (users->size != 0) {
-    for (int i = 0; i < users->size; ++i) {
+    for (size_t i = 0; i < users->size; ++i) {
         if (strcmp(users->data[i].login, login) == 0) {
             printf("This login is already in use\n");
+            free(login);
             return Wrong_input;
         }
     }
@@ -134,6 +130,7 @@ int sign_in(Users* users, int* login_index) {
     if (tmp)
         return tmp;
     if (!check_login(login)) {
+        free(login);
         printf("Invalid login\n");
         return Wrong_input;
     }
@@ -145,7 +142,7 @@ int sign_in(Users* users, int* login_index) {
     printf("Invalid pin\n");
         return Wrong_input;
     }
-    for (int i = 0; i < users->size; ++i) {
+    for (size_t i = 0; i < users->size; ++i) {
         if (strcmp(users->data[i].login, login) == 0 && users->data[i].pin == pin) {
             *login_index = i;
             free(login);
@@ -212,7 +209,7 @@ int sacntions(Users* users, char* login, int number) {
     scanf("%d", &password);
     clear_buffer();
     if (password == SECRET_PASS) {
-        for (int i = 0; i < users->size; ++i) {
+        for (size_t i = 0; i < users->size; ++i) {
             if (strcmp(users->data[i].login, login) == 0) {
                 users->data[i].sanctions = number;
                 return 0;
@@ -226,7 +223,7 @@ int sacntions(Users* users, char* login, int number) {
 
 void users_destroy(Users* users) {
     if (!users) return;
-    for (int i = 0; i < users->size; ++i) {
+    for (size_t i = 0; i < users->size; ++i) {
         free(users->data[i].login);
     }
     free(users->data);
@@ -288,12 +285,12 @@ int save(const char* filename, Users* users) {
     if (!fin) return File_error;
 
     for (size_t i = 0; i < users->size; ++i) {
-        User *u = &users->data[i];
-        size_t login_len = strlen(u->login) + 1;
+        User *user = &users->data[i];
+        size_t login_len = strlen(user->login) + 1;
         if (fwrite(&login_len, sizeof(size_t), 1, fin) != 1 ||
-            fwrite(u->login, sizeof(char), login_len, fin) != login_len ||
-            fwrite(&u->pin, sizeof(int), 1, fin) != 1 ||
-            fwrite(&u->sanctions, sizeof(int), 1, fin) != 1) {
+            fwrite(user->login, sizeof(char), login_len, fin) != login_len ||
+            fwrite(&user->pin, sizeof(int), 1, fin) != 1 ||
+            fwrite(&user->sanctions, sizeof(int), 1, fin) != 1) {
             fclose(fin);
             return File_error;
         }

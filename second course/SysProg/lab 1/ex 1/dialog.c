@@ -33,7 +33,7 @@ int handle_choice(char* choice, Users* users, int* flag, int* n_commands, int* l
         }
     }
 
-    if (*flag == 0) { // бабаба с бебебе
+    if (*flag == 0) {
         printf("You have not been authorized\n");
         return Wrong_input;
     }
@@ -86,7 +86,7 @@ int handle_choice(char* choice, Users* users, int* flag, int* n_commands, int* l
             return Unrecognized_command;
         }
     } else if (*n_commands > users->data[*login_index].sanctions && *flag == 1) {
-        printf("CHEL POKA\n");
+        printf("The number of requests exceeds the possible\n");
     }
     return 0;
 }
@@ -97,9 +97,10 @@ int dialog_manager() {
     if (err) {
         return err;
     }
-    err = load("database.bin", users);
-    if (err)
+    err = load("lab1/task1/database.bin", users);
+    if (err) {
         return err;
+    }
     int is_authorized = 0,  n_commands = 0, login_index;
     print_menu();
     while (1) {
@@ -110,9 +111,8 @@ int dialog_manager() {
             return Memory_leak;
         }
         err = handle_choice(choice, users, &is_authorized, &n_commands, &login_index);
-        //  char c = getc(stdin);
         if (err == EXIT) {
-            err = save("database.bin", users);
+            err = save("lab1/task1/database.bin", users);
             if (err)
                 return err;
             users_destroy(users);
