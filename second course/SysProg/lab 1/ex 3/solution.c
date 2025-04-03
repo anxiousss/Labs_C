@@ -1,18 +1,12 @@
 #include "solution.h"
 
-int sem_op(int sem_num, int op_val) {
-    struct sembuf op = {sem_num, op_val, IPC_NOWAIT};
-    if (semop(semid, &op, 1) == -1) {
-        return Sem_error;
-    }
-    return 0;
-}
-
-
 void* process(void* arg) {
-    int id = *((int*)arg);
+    ThreadArgs* args = (ThreadArgs*)arg;
+    int id = args->id;
+    int semid = args->semid;
+    free(arg);
 
-    for (int i = 0; i < 100; ++i) {
+    for (int i = 0; i < 5; ++i) {
         int left = id;
         int right = (id + 1) % N;
         int first = min(left, right);
@@ -38,3 +32,4 @@ void* process(void* arg) {
     }
     return NULL;
 }
+

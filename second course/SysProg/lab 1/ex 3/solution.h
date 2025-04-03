@@ -1,5 +1,3 @@
-
-
 #ifndef SYS_PROG_SOLUTION_H
 #define SYS_PROG_SOLUTION_H
 
@@ -17,8 +15,6 @@ static inline int min(int a, int b) { return (a < b) ? a : b; }
 #define N 5
 #define KEY 0x1234
 
-extern int semid;
-
 typedef enum Errors {
     Sem_error = 2,
     Pthread_error
@@ -30,7 +26,10 @@ typedef union semun {
     unsigned short *array;
 } semun;
 
-int sem_op(int sem_num, int op_val);
+typedef struct ThreadArgs {
+    int id;
+    int semid;
+} ThreadArgs;
 
 void* process(void* arg);
 

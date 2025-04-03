@@ -1,8 +1,8 @@
 #include "solution.h"
 
-int semid;
-
 int main() {
+    int semid;
+
     if ((semid = semget(KEY, N, 0666)) != -1) {
         semctl(semid, 0, IPC_RMID);
     }
@@ -14,12 +14,9 @@ int main() {
     }
 
     unsigned short values[N];
-    for (int i = 0; i < N; ++i) {
-        values[i] = 1;
-    }
-    semun arg;
-    arg.array = values;
+    for (int i = 0; i < N; ++i) values[i] = 1;
 
+    semun arg = { .array = values };
     if (semctl(semid, 0, SETALL, arg) == -1) {
         semctl(semid, 0, IPC_RMID);
         printf("Sem error");
@@ -27,16 +24,18 @@ int main() {
     }
 
     pthread_t threads[N];
-
-    int identifiers[N];
     for (int i = 0; i < N; ++i) {
-        identifiers[i] = i;
-        if (pthread_create(&threads[i], NULL, process, identifiers + i)) {
+        ThreadArgs* args = malloc(sizeof(ThreadArgs));
+        args->id = i;
+        args->semid = semid;
+
+        if (pthread_create(&threads[i], NULL, process, args)) {
             printf("Pthread error\n");
             for (int j = 0; j < i; ++j) {
+                pthread_cancel(threads[j]);
                 pthread_join(threads[j], NULL);
             }
-
+            while (--i >= 0) free((ThreadArgs*)threads[i]);
             semctl(semid, 0, IPC_RMID);
             return Pthread_error;
         }
