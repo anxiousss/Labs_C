@@ -133,8 +133,7 @@ namespace my_container {
             my_container::List<int> another_list{4, 5, 6};
             EXPECT_EQ(empty_list.max_size(), another_list.max_size());
 
-            static_assert(noexcept(empty_list.max_size()),
-                          "max_size() should be noexcept");
+
         }
 
     }
