@@ -34,11 +34,11 @@ set(BUILD_GMOCK OFF CACHE BOOL "" FORCE)
 set(INSTALL_GTEST OFF CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
-# Основная библиотека
-add_library(my_lib src/container.cpp
-        src/array.cpp
+add_library(my_lib
+        include/container.hpp
         include/array.hpp
-        include/container.hpp)
+        src/container.cpp
+        src/array.cpp)
 
 target_include_directories(my_lib PUBLIC include)
 target_compile_options(my_lib PRIVATE

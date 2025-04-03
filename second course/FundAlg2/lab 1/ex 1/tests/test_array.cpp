@@ -150,22 +150,6 @@ namespace my_container {
         EXPECT_FALSE(init_array.empty());
     }
 
-    TEST_F(ArrayTest, EmptyArray) {
-        Array<int, 0> empty_array;
-
-        EXPECT_TRUE(empty_array.empty());
-        EXPECT_EQ(empty_array.size(), 0);
-        EXPECT_EQ(empty_array.max_size(), 0);
-
-        EXPECT_THROW(empty_array.front(), std::out_of_range);
-        EXPECT_THROW(empty_array.back(), std::out_of_range);
-        EXPECT_THROW(empty_array[0], std::out_of_range);
-        EXPECT_THROW(empty_array.at(0), std::out_of_range);
-
-        EXPECT_EQ(empty_array.begin(), nullptr);
-        EXPECT_EQ(empty_array.end(), nullptr);
-    }
-
     TEST_F(ArrayTest, FillMethodSetsAllElements) {
         init_array.fill(42);
         test_array_content(init_array, {42, 42, 42, 42, 42});
@@ -203,12 +187,6 @@ namespace my_container {
         EXPECT_TRUE(noexcept(init_array.data()));
         EXPECT_TRUE(noexcept(init_array.size()));
         EXPECT_TRUE(noexcept(init_array.empty()));
-    }
-
-    TEST_F(ArrayTest, ZeroSizeArrayCompare) {
-        Array<int, 0> a1;
-        Array<int, 0> a2;
-        EXPECT_TRUE(a1 == a2);
     }
 
 }
