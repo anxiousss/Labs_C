@@ -1,6 +1,5 @@
 #include "solution.h"
 
-pthread_mutex_t print_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 int get_options(int argc, char* argv[], int* N) {
     if (argc != 2) {
@@ -79,18 +78,18 @@ void* woman_thread(void* arg) {
     ThreadArgs* args = (ThreadArgs*)arg;
     woman_wants_to_enter(args->state);
 
-    pthread_mutex_lock(&print_mutex);
+    pthread_mutex_lock(args->print_mutex);
     printf("Woman %d enter. Women: %d, Men: %d\n",
            args->id, args->state->women_inside, args->state->men_inside);
-    pthread_mutex_unlock(&print_mutex);
+    pthread_mutex_unlock(args->print_mutex);
 
     sleep(1);
     woman_leaves(args->state);
 
-    pthread_mutex_lock(&print_mutex);
+    pthread_mutex_lock(args->print_mutex);
     printf("Woman %d exit. Women: %d, Men: %d\n",
            args->id, args->state->women_inside, args->state->men_inside);
-    pthread_mutex_unlock(&print_mutex);
+    pthread_mutex_unlock(args->print_mutex);
 
     free(arg);
     return NULL;
@@ -100,18 +99,18 @@ void* man_thread(void* arg) {
     ThreadArgs* args = (ThreadArgs*)arg;
     man_wants_to_enter(args->state);
 
-    pthread_mutex_lock(&print_mutex);
+    pthread_mutex_lock(args->print_mutex);
     printf("Man %d enter. Women: %d, Men: %d\n",
            args->id, args->state->women_inside, args->state->men_inside);
-    pthread_mutex_unlock(&print_mutex);
+    pthread_mutex_unlock(args->print_mutex);
 
     sleep(1);
     man_leaves(args->state);
 
-    pthread_mutex_lock(&print_mutex);
+    pthread_mutex_lock(args->print_mutex);
     printf("Man %d exit. Women: %d, Men: %d\n",
            args->id, args->state->women_inside, args->state->men_inside);
-    pthread_mutex_unlock(&print_mutex);
+    pthread_mutex_unlock(args->print_mutex);
 
     free(arg);
     return NULL;

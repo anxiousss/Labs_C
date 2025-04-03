@@ -12,7 +12,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-extern pthread_mutex_t print_mutex;
 
 
 typedef enum Errors {
@@ -41,6 +40,7 @@ typedef struct {
 typedef struct {
     RoomState* state;
     int id;
+    pthread_mutex_t* print_mutex;
 } ThreadArgs;
 
 int room_init(RoomState* state, int max_people);
