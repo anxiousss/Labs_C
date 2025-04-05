@@ -35,7 +35,7 @@ namespace my_container {
         EXPECT_THROW((my_container::Array<char, 2> {'a', 'b', 'c'}), std::invalid_argument);
 
         short_init = {1 , 2, 3};
-        test_array_content(short_init, {1, 2, 3, 0 ,0});
+        test_array_content(short_init, {1, 2, 3, 0, 0});
 
         EXPECT_THROW((short_init = {1, 2, 3, 4, 5, 6, 7}), std::invalid_argument);
 
@@ -55,7 +55,7 @@ namespace my_container {
     TEST_F(ArrayTest, AssignmentOperator) {
         default_array = init_array;
         test_array_content(default_array, {1, 2, 3, 4, 5});
-        default_array = default_array;  // self-assign
+        default_array = default_array;
         test_array_content(default_array, {1, 2, 3, 4, 5});
     }
 
@@ -65,13 +65,11 @@ namespace my_container {
 
         dest = std::move(src);
 
-        // Проверка содержимого получателя
         EXPECT_EQ(dest[0], 1);
         EXPECT_EQ(dest[1], 2);
         EXPECT_EQ(dest[2], 3);
         EXPECT_EQ(dest[3], 4);
 
-        // Проверка состояния источника
         for (const auto &item: src) {
             EXPECT_EQ(item, 0);
         }
@@ -232,19 +230,15 @@ TEST(ArrayAssignmentTest, PartialModificationCheck) {
 
 
 TEST(ArrayAccessorsTest, FrontBackConstMethods) {
-    // Тестирование front() и back() для непустого массива
     my_container::Array<int, 4> arr = {10, 20, 30, 40};
     const auto &const_arr = arr;
 
-    // Проверка front()
     EXPECT_EQ(const_arr.front(), 10);
     EXPECT_EQ(arr.front(), 10);
 
-    // Проверка back()
     EXPECT_EQ(const_arr.back(), 40);
     EXPECT_EQ(arr.back(), 40);
 
-    // Проверка модификации через неконстантные методы
     arr.front() = 100;
     arr.back() = 400;
     EXPECT_EQ(const_arr.front(), 100);
@@ -255,14 +249,12 @@ TEST(ArrayIteratorsTest, ReverseIteratorsBehavior) {
     my_container::Array<char, 5> arr = {'a', 'b', 'c', 'd', 'e'};
     const auto &const_arr = arr;
 
-    // Проверка reverse_iterator
     std::string reverse_result;
     for (auto rit = arr.rbegin(); rit != arr.rend(); ++rit) {
         reverse_result += *rit;
     }
     EXPECT_EQ(reverse_result, "edcba");
 
-    // Проверка const_reverse_iterator
     std::string const_reverse_result;
     for (auto crit = const_arr.crbegin(); crit != const_arr.crend(); ++crit) {
         const_reverse_result += *crit;
