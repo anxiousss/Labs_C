@@ -46,17 +46,19 @@ namespace my_container {
 
         List& operator=(const List& other);
 
+        Container<T>& operator=(const Container<T>& other) override;
+
         List& operator=(List&& other) noexcept;
 
         ~List() override;
 
-        virtual T& front();
+        T& front();
 
-        virtual const T& front() const;
+        const T& front() const;
 
-        virtual T& back();
+        T& back();
 
-        virtual const T& back() const;
+        const T& back() const;
 
         bool operator==(const Container<T>& other) const override;
         bool operator!=(const Container<T>& other) const override;
@@ -117,23 +119,33 @@ namespace my_container {
             bool operator!=(const const_iterator& other) const { return !(*this == other); }
         };
 
+
         iterator begin() noexcept { return iterator(sentinel->next); }
         iterator end() noexcept { return iterator(sentinel); }
         const_iterator cbegin() const noexcept { return const_iterator(sentinel->next); }
         const_iterator cend() const noexcept { return const_iterator(sentinel); }
 
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+        reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(cend()); }
+        const_reverse_iterator crend() const noexcept { return const_reverse_iterator(cbegin()); }
+
+        const_reverse_iterator rbegin() const noexcept { return crbegin(); }
+        const_reverse_iterator rend() const noexcept { return crend(); }
 
 
         iterator insert(const_iterator pos, const T& value);
 
         iterator erase(const_iterator pos);
 
-        virtual void push_back(const T& value) { insert(end(), value); }
+        void push_back(const T& value) { insert(end(), value); }
         void pop_back() { erase(--end()); }
-
-        virtual void push_front(const T& value) { insert(begin(), value); }
-
-        virtual void pop_front() { erase(begin()); }
+        void push_front(const T& value) { insert(begin(), value); }
+        void pop_front() { erase(begin()); }
 
         void resize(size_t count, const T& value = T());
 
@@ -141,6 +153,20 @@ namespace my_container {
 
 
     };
+
+    template<typename T>
+    Container<T>& List<T>::operator=(const Container<T>& other) {
+        if (this == &other)
+            return *this;
+
+        const List<T>* list = dynamic_cast<const List<T>*>(&other);
+        if (!list)
+            throw std::invalid_argument("Incompatible container type");
+
+        *this = *list;
+        return *this;
+    }
+
     template<typename T>
     bool List<T>::operator==(const Container<T>& other) const {
         const List<T>* otherList = dynamic_cast<const List<T>*>(&other);
