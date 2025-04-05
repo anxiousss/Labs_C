@@ -119,11 +119,23 @@ namespace my_container {
             bool operator!=(const const_iterator& other) const { return !(*this == other); }
         };
 
+
         iterator begin() noexcept { return iterator(sentinel->next); }
         iterator end() noexcept { return iterator(sentinel); }
         const_iterator cbegin() const noexcept { return const_iterator(sentinel->next); }
         const_iterator cend() const noexcept { return const_iterator(sentinel); }
 
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+        reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(cend()); }
+        const_reverse_iterator crend() const noexcept { return const_reverse_iterator(cbegin()); }
+
+        const_reverse_iterator rbegin() const noexcept { return crbegin(); }
+        const_reverse_iterator rend() const noexcept { return crend(); }
 
 
         iterator insert(const_iterator pos, const T& value);

@@ -269,3 +269,51 @@ TEST(ListAssignmentTest, AssignViaContainerPointer) {
     EXPECT_EQ(list1.size(), list2.size());
     EXPECT_TRUE(std::equal(list1.begin(), list1.end(), list2.begin()));
 }
+
+
+TEST(ListReverseIteratorsTest, EmptyList) {
+    const my_container::List<int> list;
+    EXPECT_EQ(list.rbegin(), list.rend());
+    EXPECT_EQ(list.crbegin(), list.crend());
+}
+
+TEST(ListReverseIteratorsTest, SingleElement) {
+    my_container::List<std::string> list;
+    list.push_back("hello");
+
+    auto rit = list.rbegin();
+    ASSERT_NE(rit, list.rend());
+    EXPECT_EQ(*rit, "hello");
+    EXPECT_EQ(++rit, list.rend());
+}
+
+TEST(ListReverseIteratorsTest, ReverseTraversal) {
+    my_container::List<int> list = {1, 2, 3, 4, 5};
+    const std::vector<int> expected = {5, 4, 3, 2, 1};
+
+    // Проверка неконстантных итераторов
+    std::vector<int> result;
+    for (auto rit = list.rbegin(); rit != list.rend(); ++rit) {
+        result.push_back(*rit);
+    }
+    EXPECT_EQ(result, expected);
+
+    // Проверка константных итераторов
+    const auto& clist = list;
+    std::vector<int> cresult;
+    for (auto rit = clist.crbegin(); rit != clist.crend(); ++rit) {
+        cresult.push_back(*rit);
+    }
+    EXPECT_EQ(cresult, expected);
+}
+
+TEST(ListReverseIteratorsTest, MixedOperations) {
+    my_container::List<int> list = {100, 200, 300};
+
+    auto rit1 = list.rbegin();
+    auto rit2 = rit1++;
+
+    EXPECT_EQ(*rit1, 200);
+    EXPECT_EQ(*rit2, 300);
+    EXPECT_EQ(rit2.base(), list.end());
+}
