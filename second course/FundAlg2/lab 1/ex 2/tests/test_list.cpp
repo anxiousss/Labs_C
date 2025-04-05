@@ -291,14 +291,12 @@ TEST(ListReverseIteratorsTest, ReverseTraversal) {
     my_container::List<int> list = {1, 2, 3, 4, 5};
     const std::vector<int> expected = {5, 4, 3, 2, 1};
 
-    // Проверка неконстантных итераторов
     std::vector<int> result;
     for (auto rit = list.rbegin(); rit != list.rend(); ++rit) {
         result.push_back(*rit);
     }
     EXPECT_EQ(result, expected);
 
-    // Проверка константных итераторов
     const auto& clist = list;
     std::vector<int> cresult;
     for (auto rit = clist.crbegin(); rit != clist.crend(); ++rit) {
