@@ -41,10 +41,11 @@ namespace my_container {
 
         Array<T, N> &operator=(const Array<T, N> &other);
 
+        Container<T>& operator=(const Container<T> & other) override;
+
         Array<T, N> &operator=(Array<T, N> &&other) noexcept ;
 
         Array &operator=(std::initializer_list<T> init);
-
 
         T &at(size_t index);
 
@@ -99,14 +100,25 @@ namespace my_container {
         std::strong_ordering operator<=>(const Array<T, N> &rhs) const;
     };
 
+    template<typename T, size_t N>
+    Container<T>& Array<T, N>::operator=(const Container<T> &other) {
+        auto *array = dynamic_cast<const Array*>(&other);
+        if (!array) {
+            throw std::invalid_argument("Invalid type");
+        }
+
+        std::copy(array->cbegin(), array->cend(), elements);
+        return *this;;
+    }
 
     template<typename T, size_t N>
     Array<T, N>::Array(std::initializer_list<T> init) {
-        if (static_cast<size_t>(init.size()) != N) {
+        if (static_cast<size_t>(init.size()) > N) {
             throw std::invalid_argument("Invalid initializer list size");
         }
         std::copy(init.begin(), init.end(), elements);
     }
+
 
     template<typename T, size_t N>
     Array<T, N>::Array(const Array<T, N> &other) {
@@ -138,7 +150,7 @@ namespace my_container {
 
     template<typename T, size_t N>
     Array<T, N> &Array<T, N>::operator=(std::initializer_list<T> init) {
-        if (init.size() != N) {
+        if (init.size() > N) {
             throw std::invalid_argument("Invalid initializer list size");
         }
         std::copy(init.begin(), init.end(), begin());
@@ -185,13 +197,11 @@ namespace my_container {
 
     template<typename T, size_t N>
     T &Array<T, N>::back() {
-        static_assert(N > 0, "Array<0> is empty");
         return elements[N - 1];
     }
 
     template<typename T, size_t N>
     const T &Array<T, N>::back() const {
-        static_assert(N > 0, "Array<0> is empty");
         return elements[N - 1];
     }
 
@@ -286,10 +296,7 @@ namespace my_container {
 
     template<typename T, size_t N>
     std::strong_ordering Array<T, N>::operator<=>(const Array<T, N> &rhs) const {
-        return std::lexicographical_compare_three_way(
-                cbegin(), cend(),
-                rhs.cbegin(), rhs.cend()
-        );
+        return std::lexicographical_compare_three_way(cbegin(), cend(),rhs.cbegin(), rhs.cend());
     }
 
 
