@@ -46,6 +46,8 @@ namespace my_container {
 
         List& operator=(const List& other);
 
+        Container<T>& operator=(const Container<T>& other) override;
+
         List& operator=(List&& other) noexcept;
 
         ~List() override;
@@ -139,6 +141,20 @@ namespace my_container {
 
 
     };
+
+    template<typename T>
+    Container<T>& List<T>::operator=(const Container<T>& other) {
+        if (this == &other)
+            return *this;
+
+        const List<T>* list = dynamic_cast<const List<T>*>(&other);
+        if (!list)
+            throw std::invalid_argument("Incompatible container type");
+
+        *this = *list;
+        return *this;
+    }
+
     template<typename T>
     bool List<T>::operator==(const Container<T>& other) const {
         const List<T>* otherList = dynamic_cast<const List<T>*>(&other);
