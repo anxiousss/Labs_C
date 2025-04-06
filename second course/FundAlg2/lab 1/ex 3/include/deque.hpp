@@ -26,34 +26,9 @@ namespace my_container {
 
         bool operator==(const Container<T>& other) const override;
         bool operator!=(const Container<T>& other) const override;
-        bool operator<(const Container<T>& other) const;
-        bool operator>(const Container<T>& other) const;
-        bool operator<=(const Container<T>& other) const;
-        bool operator>=(const Container<T>& other) const;
 
-        auto operator<=>(const List<T>& other) const {
-            return std::lexicographical_compare_three_way(
-                    List<T>::cbegin(), List<T>::cend(),
-                    other.cbegin(), other.cend()
-            );
-        }
 
     };
-
-    template<typename T>
-    bool Deque<T>::operator>=(const Container<T> &other) const {
-        return !(*this < other);
-    }
-
-    template<typename T>
-    bool Deque<T>::operator<=(const Container<T> &other) const {
-        return !(*this > other);
-    }
-
-    template<typename T>
-    bool Deque<T>::operator>(const Container<T> &other) const {
-        return static_cast<const List<T>&>(other) < static_cast<const List<T>&>(*this);
-    }
 
     template<typename T>
     bool Deque<T>::operator==(const Container<T>& other) const {
@@ -65,10 +40,6 @@ namespace my_container {
         return !(*this == other);
     }
 
-    template<typename T>
-    bool Deque<T>::operator<(const Container<T>& other) const {
-        return static_cast<const List<T>&>(*this) < static_cast<const List<T>&>(other);
-        }
     template<typename T>
     Deque<T> &Deque<T>::operator=(Deque &&other) noexcept {
         List<T>::operator=(std::move(other));
@@ -86,7 +57,6 @@ namespace my_container {
 
     template<typename T>
     Deque<T>::Deque(const Deque &other) : List<T>(other) {}
-
 
 
     template <typename T>
