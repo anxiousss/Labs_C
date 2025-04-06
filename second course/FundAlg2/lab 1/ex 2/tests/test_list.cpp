@@ -72,6 +72,15 @@ namespace my_container {
             EXPECT_EQ(it, sample_list.end());
         }
 
+        TEST_F(ListTest, ConstIterators) {
+            const List<int> constList = sample_list;
+            int sum = 0;
+            for (auto it = constList.begin(); it != constList.end(); ++it) {
+                sum += *it;
+            }
+            EXPECT_EQ(sum, 6);
+        }
+
         TEST(ListFrontBackTest, SingleElement) {
             my_container::List<std::string> list;
             list.push_back("hello");

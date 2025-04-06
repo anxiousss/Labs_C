@@ -62,7 +62,9 @@ namespace my_container {
 
         bool operator==(const Container<T>& other) const override;
         bool operator!=(const Container<T>& other) const override;
-        bool operator<(const List& other) const;
+        bool operator==(const List<T> &rhs) const;
+        bool operator!=(const List<T> &rhs) const;  
+        std::strong_ordering operator<=>(const List<T> &rhs) const;
 
         bool empty() const override { return list_size == 0; }
         size_t size() const override { return list_size; }
@@ -122,6 +124,8 @@ namespace my_container {
 
         iterator begin() noexcept { return iterator(sentinel->next); }
         iterator end() noexcept { return iterator(sentinel); }
+        iterator begin() const noexcept {return iterator(sentinel->next);}
+        iterator end() const noexcept {return iterator(sentinel);}
         const_iterator cbegin() const noexcept { return const_iterator(sentinel->next); }
         const_iterator cend() const noexcept { return const_iterator(sentinel); }
 
@@ -179,9 +183,20 @@ namespace my_container {
         return !(*this == other);
     }
 
-    template<typename T>
-    bool List<T>::operator<(const List& other) const {
-        return std::lexicographical_compare(cbegin(), cend(), other.cbegin(), other.cend());
+    template <typename T>
+    std::strong_ordering List<T>::operator<=>(const List<T> &rhs) const {
+        return std::lexicographical_compare_three_way(begin(), end(), rhs.begin(), rhs.end());
+    }
+
+
+    template <typename T>
+    bool List<T>::operator!=(const List<T> &rhs) const {
+        return !(*this == rhs);
+    }
+
+    template <typename T>
+    bool List<T>::operator==(const List<T> &rhs) const {
+        return (*this <=> rhs) == std::strong_ordering::equal;
     }
 
     template<typename T>
