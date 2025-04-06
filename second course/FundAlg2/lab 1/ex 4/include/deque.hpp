@@ -5,72 +5,39 @@
 
 namespace my_container {
 
-    template <typename T>
+    template<typename T>
     class Deque : public List<T> {
     public:
         Deque() = default;
 
         Deque(std::initializer_list<T> init) : List<T>(init) {}
 
-        Deque(const Deque& other);
+        Deque(const Deque &other);
 
-        Deque(Deque&& other) noexcept;
+        Deque(Deque &&other) noexcept;
 
-        Deque& operator=(const Deque& other);
+        Deque &operator=(const Deque &other);
 
-        Deque& operator=(Deque&& other) noexcept;
+        Deque &operator=(Deque &&other) noexcept;
 
-        void push_front(const T& value) override;
+        T &at(size_t pos);
 
-        void push_front(T&& value) override;
+        T &operator[](size_t pos);
 
-        void pop_front() override;
+        bool operator==(const Container<T>& other) const override;
+        bool operator!=(const Container<T>& other) const override;
 
-        T& front() override;
 
-        const T& front() const override;
-
-        T& back() override;
-
-        const T& back() const override;
-
-        using List<T>::operator==;
-        using List<T>::operator!=;
     };
 
     template<typename T>
-    void Deque<T>::push_front(T &&value) {
-        List<T>::push_front(std::move(value));
+    bool Deque<T>::operator==(const Container<T>& other) const {
+        return static_cast<const List<T>&>(*this) == static_cast<const List<T>&>(other);
     }
 
     template<typename T>
-    const T &Deque<T>::back() const {
-        return List<T>::back();
-    }
-
-    template<typename T>
-    T &Deque<T>::back() {
-        return List<T>::back();
-    }
-
-    template<typename T>
-    T &Deque<T>::front() {
-        return List<T>::front();
-    }
-
-    template<typename T>
-    const T &Deque<T>::front() const {
-        return List<T>::front();
-    }
-
-    template<typename T>
-    void Deque<T>::pop_front() {
-        List<T>::pop_front();
-    }
-
-    template<typename T>
-    void Deque<T>::push_front(const T &value) {
-        List<T>::push_front(value);
+    bool Deque<T>::operator!=(const Container<T>& other) const {
+        return !(*this == other);
     }
 
     template<typename T>
@@ -90,6 +57,22 @@ namespace my_container {
 
     template<typename T>
     Deque<T>::Deque(const Deque &other) : List<T>(other) {}
+
+
+    template <typename T>
+    T &Deque<T>::operator[](size_t pos) {
+        auto it = this->begin();
+        std::advance(it, pos);
+        return *it;
+    }
+
+    template <typename T>
+    T &Deque<T>::at(size_t pos) {
+        if (pos >= this->size()) {
+            throw std::out_of_range("At");
+        }
+        return (*this)[pos];
+    }
 
 }
 

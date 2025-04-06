@@ -104,7 +104,7 @@ namespace my_container {
 
     template<typename T>
     void Stack<T>::push(T &&value) {
-        data.push_front(std::move(value));
+        data.push_front(value);
     }
 
     template<typename T>

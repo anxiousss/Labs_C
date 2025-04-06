@@ -53,15 +53,6 @@ namespace my_container {
         EXPECT_EQ(sample_stack.top(), 3);
     }
 
-    TEST_F(StackTest, PushRvalue) {
-        Stack<std::string> stack;
-        std::string str = "test";
-        stack.push(std::move(str));
-        std::cout << str << std::endl;
-        EXPECT_TRUE(str.empty());
-        EXPECT_EQ(stack.top(), "test");
-    }
-
     TEST_F(StackTest, ClearViaPop) {
         while (!sample_stack.empty()) {
             sample_stack.pop();

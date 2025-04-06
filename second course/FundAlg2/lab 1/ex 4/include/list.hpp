@@ -22,11 +22,6 @@ namespace my_container {
 
             explicit Node(const T& data = T(), Node* prev = nullptr, Node* next = nullptr)
                     : data(data), prev(prev), next(next) {}
-
-            explicit Node(T&& data, Node* prev = nullptr, Node* next = nullptr)
-                    : data(std::move(data)),
-                      prev(prev),
-                      next(next) {}
         };
 
         Node* sentinel;
@@ -51,21 +46,25 @@ namespace my_container {
 
         List& operator=(const List& other);
 
+        Container<T>& operator=(const Container<T>& other) override;
+
         List& operator=(List&& other) noexcept;
 
         ~List() override;
 
-        virtual T& front();
+        T& front();
 
-        virtual const T& front() const;
+        const T& front() const;
 
-        virtual T& back();
+        T& back();
 
-        virtual const T& back() const;
+        const T& back() const;
 
         bool operator==(const Container<T>& other) const override;
         bool operator!=(const Container<T>& other) const override;
-        std::strong_ordering operator<=>(const List<T> &other) const;
+        bool operator==(const List<T> &rhs) const;
+        bool operator!=(const List<T> &rhs) const;
+        std::strong_ordering operator<=>(const List<T> &rhs) const;
 
         bool empty() const override { return list_size == 0; }
         size_t size() const override { return list_size; }
@@ -122,27 +121,35 @@ namespace my_container {
             bool operator!=(const const_iterator& other) const { return !(*this == other); }
         };
 
+
         iterator begin() noexcept { return iterator(sentinel->next); }
         iterator end() noexcept { return iterator(sentinel); }
-        const_iterator begin() const noexcept { return const_iterator(sentinel->next); }
-        const_iterator end() const noexcept { return const_iterator(sentinel); }
+        iterator begin() const noexcept {return iterator(sentinel->next);}
+        iterator end() const noexcept {return iterator(sentinel);}
         const_iterator cbegin() const noexcept { return const_iterator(sentinel->next); }
         const_iterator cend() const noexcept { return const_iterator(sentinel); }
 
+        using reverse_iterator = std::reverse_iterator<iterator>;
+        using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+
+        reverse_iterator rbegin() noexcept { return reverse_iterator(end()); }
+        reverse_iterator rend() noexcept { return reverse_iterator(begin()); }
+
+        const_reverse_iterator crbegin() const noexcept { return const_reverse_iterator(cend()); }
+        const_reverse_iterator crend() const noexcept { return const_reverse_iterator(cbegin()); }
+
+        const_reverse_iterator rbegin() const noexcept { return crbegin(); }
+        const_reverse_iterator rend() const noexcept { return crend(); }
+
 
         iterator insert(const_iterator pos, const T& value);
-        iterator insert(const_iterator pos, T&& value);
 
         iterator erase(const_iterator pos);
 
-        virtual void push_back(const T& value) { insert(end(), value); }
+        void push_back(const T& value) { insert(end(), value); }
         void pop_back() { erase(--end()); }
-
-        virtual void push_front(const T& value) { insert(begin(), value); }
-
-        virtual void push_front(T&& value) { insert(begin(), std::move(value));}
-
-        virtual void pop_front() { erase(begin()); }
+        void push_front(const T& value) { insert(begin(), value); }
+        void pop_front() { erase(begin()); }
 
         void resize(size_t count, const T& value = T());
 
@@ -152,17 +159,16 @@ namespace my_container {
     };
 
     template<typename T>
-    List<T>::iterator List<T>::insert(List::const_iterator pos, T &&value) {
-        Node* current_node = const_cast<Node*>(pos.current);
+    Container<T>& List<T>::operator=(const Container<T>& other) {
+        if (this == &other)
+            return *this;
 
-        Node* prev_node = current_node->prev;
-        Node* new_node = new Node(std::move(value), prev_node, current_node);
+        const List<T>* list = dynamic_cast<const List<T>*>(&other);
+        if (!list)
+            throw std::invalid_argument("Incompatible container type");
 
-        prev_node->next = new_node;
-        current_node->prev = new_node;
-
-        list_size++;
-        return iterator(new_node);
+        *this = *list;
+        return *this;
     }
 
     template<typename T>
@@ -178,18 +184,23 @@ namespace my_container {
     }
 
     template <typename T>
-    std::strong_ordering List<T>::operator<=>(const List& other) const {
-        return std::lexicographical_compare_three_way(
-                this->cbegin(), this->cend(),
-                other.cbegin(), other.cend()
-        );
+    std::strong_ordering List<T>::operator<=>(const List<T> &rhs) const {
+        return std::lexicographical_compare_three_way(begin(), end(), rhs.begin(), rhs.end());
+    }
+
+
+    template <typename T>
+    bool List<T>::operator!=(const List<T> &rhs) const {
+        return !(*this == rhs);
+    }
+
+    template <typename T>
+    bool List<T>::operator==(const List<T> &rhs) const {
+        return (*this <=> rhs) == std::strong_ordering::equal;
     }
 
     template<typename T>
     List<T>::iterator List<T>::erase(List::const_iterator pos) {
-        if (pos == end() || empty()) {
-            throw std::out_of_range("List is empty");
-        }
         Node* next_node = pos.current->next;
         pos.current->prev->next = pos.current->next;
         pos.current->next->prev = pos.current->prev;
@@ -212,14 +223,12 @@ namespace my_container {
 
     template<typename T>
     List<T>::iterator List<T>::insert(List::const_iterator pos, const T &value) {
-        Node* current_node = const_cast<Node*>(pos.current);
+        Node* prev_node = const_cast<Node*>(pos.current->prev);
+        Node* next_node = const_cast<Node*>(pos.current);
 
-        Node* prev_node = current_node->prev;
-        Node* new_node = new Node(value, prev_node, current_node);
-
+        Node* new_node = new Node(value, prev_node, next_node);
         prev_node->next = new_node;
-        current_node->prev = new_node;
-
+        next_node->prev = new_node;
         list_size++;
         return iterator(new_node);
     }
