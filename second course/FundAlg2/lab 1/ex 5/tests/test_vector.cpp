@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include "vector.hpp"
+#include "../include/vector.hpp"
 
 using namespace my_container;
 
