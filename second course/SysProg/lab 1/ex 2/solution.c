@@ -21,36 +21,37 @@ int process_xorN(char** files, int n_files, int N) {
     for (int i = 0; i < n_files; i++) {
         FILE* fp = fopen(files[i], "rb");
         if (!fp) {
-            fprintf(stderr, "Error opening %s: %s\n", files[i], strerror(errno));
+            fprintf(stderr, "Error opening: %s\n", files[i]);
             return FILE_ERROR;
         }
 
-        unsigned char* result = calloc(block_size, 1);
-        unsigned char* block = malloc(block_size);
-        if (!result || !block) {
-            fclose(fp);
-            fprintf(stderr, "Memory allocation failed for %s\n", files[i]);
-            return MEMORY_LEAK;
-        }
+        unsigned int result = 0;
 
         size_t bytes_read;
-        while ((bytes_read = fread(block, 1, block_size, fp)) > 0) {
-            if (bytes_read < (size_t)block_size) {
-                memset(block + bytes_read, 0, block_size - bytes_read);
+        if (N == 2) {
+            unsigned char xor_result = 0;
+            unsigned char byte;
+            while (fread(&byte, 1, 1, fp) == 1) {
+                xor_result ^= (byte >> 4) & 0x0F;
+                xor_result ^= byte & 0x0F;
             }
-            for (int j = 0; j < block_size; j++) {
-                result[j] ^= block[j];
+            result = xor_result;
+        } else {
+            unsigned char block;
+            while ((bytes_read = fread(&block, 1, block_size, fp)) > 0) {
+                if (bytes_read < (size_t) block_size) {
+                    memset(fp + bytes_read, 0, block_size - bytes_read);
+                }
+                for (int j = 0; j < block_size; j++) {
+                    result ^= block;
+                }
             }
         }
 
         printf("%s: ", files[i]);
-        for (int j = 0; j < block_size; j++) {
-            printf("%02x", result[j]);
-        }
+        printf("%04x", result);
         printf("\n");
 
-        free(result);
-        free(block);
         fclose(fp);
     }
     return OK;
@@ -60,21 +61,24 @@ int process_mask(char** files, int n_files, uint32_t mask) {
     for (int i = 0; i < n_files; i++) {
         FILE* fp = fopen(files[i], "rb");
         if (!fp) {
-            fprintf(stderr, "Error opening %s: %s\n", files[i], strerror(errno));
+            fprintf(stderr, "Error opening: %s\n", files[i]);
             return FILE_ERROR;
         }
 
-        uint32_t num;
-        size_t count = 0;
-        while (fread(&num, sizeof(num), 1, fp) == 1) {
-            // Отладочный вывод
-            fprintf(stderr, "Read: 0x%08x, Mask: 0x%08x, Match: %d\n",
-                    num, mask, (num & mask) == mask);
+        unsigned char buffer[4];
+        size_t bytes_read;
+        unsigned int count = 0;
 
-            if ((num & mask) == mask) count++;
+        while ((bytes_read = fread(buffer, 1, 4, fp))) {
+            if (bytes_read < 4)  {
+                memmove(buffer + 4 - bytes_read, buffer, bytes_read);
+                memset(buffer, 0, 4 - bytes_read);
+            }
+            unsigned int value = (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3];
+            if ((value & mask) == mask) count++;
         }
 
-        printf("%s: %zu\n", files[i], count);
+        printf("File: %s Count: %u\n", files[i], count);
         fclose(fp);
     }
     return OK;
@@ -84,7 +88,7 @@ int process_copyn(char** files, int n_files, int N) {
     for (int i = 0; i < n_files; i++) {
         char src_path[PATH_MAX];
         if (!realpath(files[i], src_path)) {
-            printf( "Invalid path: %s\n", files[i]);
+            printf("Invalid path: %s\n", files[i]);
             return FILE_ERROR;
         }
 
@@ -102,10 +106,7 @@ int process_copyn(char** files, int n_files, int N) {
 
         const size_t max_num_len = 10;
         const size_t safety_margin = 2;
-        const size_t max_name_len = PATH_MAX
-                                    - strlen(ext)
-                                    - max_num_len
-                                    - safety_margin;
+        const size_t max_name_len = PATH_MAX - strlen(ext) - max_num_len - safety_margin;
 
         if (strlen(name) > max_name_len) {
             name[max_name_len] = '\0';
@@ -115,35 +116,48 @@ int process_copyn(char** files, int n_files, int N) {
             pid_t pid = fork();
             if (pid == 0) {
                 char dest[PATH_MAX];
-                int written = snprintf(
-                        dest,
-                        sizeof(dest),
-                        "%s_%d%s",
-                        name,
-                        j,
-                        ext
-                );
+                int written = snprintf(dest, sizeof(dest), "%s_%d%s", name, j, ext);
 
                 if (written < 0 || (size_t)written >= sizeof(dest)) {
-                    printf( "Path too long: %s\n", dest);
-                    _exit(FILE_ERROR);
+                    printf("Path too long: %s\n", dest);
+                    exit(FILE_ERROR);
                 }
 
                 FILE* src = fopen(src_path, "rb");
                 if (!src) {
                     printf("Can't open source: %s\n", src_path);
-                    _exit(FILE_ERROR);
+                    exit(FILE_ERROR);
                 }
 
                 FILE* dest_fp = fopen(dest, "wb");
                 if (!dest_fp) {
                     fclose(src);
                     printf("Can't create: %s\n", dest);
-                    _exit(FILE_ERROR);
+                    exit(FILE_ERROR);
                 }
 
+                char buffer[4096];
+                size_t bytes_read;
+                while ((bytes_read = fread(buffer, 1, sizeof(buffer), src)) > 0) {
+                    size_t bytes_written = fwrite(buffer, 1, bytes_read, dest_fp);
+                    if (bytes_written != bytes_read) {
+                        printf("Write error to %s\n", dest);
+                        fclose(src);
+                        fclose(dest_fp);
+                        exit(FILE_ERROR);
+                    }
+                }
 
-                _exit(OK);
+                if (ferror(src)) {
+                    printf("Read error from %s\n", src_path);
+                    fclose(src);
+                    fclose(dest_fp);
+                    exit(FILE_ERROR);
+                }
+
+                fclose(src);
+                fclose(dest_fp);
+                exit(OK);
             }
         }
     }
