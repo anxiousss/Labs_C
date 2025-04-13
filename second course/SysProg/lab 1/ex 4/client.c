@@ -4,23 +4,18 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <unistd.h>
-#include <termios.h>
 #include "messages.h"
 
 
 void get_password(char *password, size_t max_len) {
-    struct termios oldt, newt;
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-
     printf("Enter shutdown password: ");
-    fgets(password, max_len, stdin);
-    password[strcspn(password, "\n")] = '\0';
 
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    printf("\n");
+    if (fgets(password, max_len, stdin) == NULL) {
+        password[0] = '\0';
+        return;
+    }
+
+    password[strcspn(password, "\n")] = '\0';
 }
 
 int main(int argc, char *argv[]) {
