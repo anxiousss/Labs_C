@@ -4,7 +4,7 @@
 #include "messages.h"
 
 typedef struct {
-    int user_id;          // Добавляем user_id в UserState
+    int user_id;  
     int boat_position;
     char in_boat[10];
     int left[3];
