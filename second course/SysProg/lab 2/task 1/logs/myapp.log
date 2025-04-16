@@ -1,0 +1,9 @@
+[INFO] Application started
+[INFO] Application started
+[INFO] === Session started ===
+[DEBUG] Initializing components...
+[INFO] Cache size: 256 MB
+[WARNING] Low memory warning
+[ERROR] Failed to open device
+[CRITICAL] Disk corruption detected!
+[INFO] === Session ended ===
