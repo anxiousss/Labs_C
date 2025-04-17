@@ -7,6 +7,9 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <stdexcept>
+#include <utility>
+#include <filesystem>
 
 enum class log_lvl {
     DEBUG,
@@ -16,23 +19,24 @@ enum class log_lvl {
     CRITICAL
 };
 
+class LoggerBuilder;
+
 class Logger {
 public:
     void write(const std::string& msg, log_lvl lvl);
-    void close();
+    void close(LoggerBuilder& builder);
 
 private:
     friend class LoggerBuilder;
-    Logger(std::string  path_,
-           log_lvl level,
-           std::vector<std::ostream*> handlers,
-           std::vector<std::unique_ptr<std::ofstream>> file_streams);
+    Logger(std::string path_, log_lvl level,
+           std::ostream* handler,
+           std::unique_ptr<std::ofstream> file_stream);
 
     std::mutex mut;
     std::string path;
     log_lvl allowed_lvl;
-    std::vector<std::ostream*> handlers;
-    std::vector<std::unique_ptr<std::ofstream>> file_streams;
+    std::ostream* handler;
+    std::unique_ptr<std::ofstream> file_stream;
 };
 
 class LoggerBuilder {
@@ -44,9 +48,10 @@ public:
     Logger build();
 
 private:
+    friend class Logger;
     std::string path;
     log_lvl level = log_lvl::INFO;
-    std::vector<std::ostream*> handlers;
-    std::vector<std::unique_ptr<std::ofstream>> file_streams;
+    std::ostream* current_handler = nullptr;
+    std::unique_ptr<std::ofstream> current_file_stream;
     inline static std::set<std::string> existed_loggers;
 };
