@@ -10,7 +10,7 @@ Logger::Logger(std::string path_, log_lvl level,
 
 void Logger::write(const std::string& msg, log_lvl lvl) {
     std::lock_guard<std::mutex> lock(mut);
-    if (lvl < allowed_lvl) return;
+    if (lvl > allowed_lvl) return;
 
     const char* level_str = "";
     switch(lvl) {
