@@ -10,6 +10,11 @@ Logger::Logger(std::string path_, log_lvl level,
 
 void Logger::write(const std::string& msg, log_lvl lvl) {
     std::lock_guard<std::mutex> lock(mut);
+
+    if (!handler) {
+        throw std::runtime_error("Attempt to write to closed logger");
+    }
+
     if (lvl > allowed_lvl) return;
 
     const char* level_str = "";
@@ -73,6 +78,9 @@ LoggerBuilder& LoggerBuilder::add_console_handler() {
 Logger LoggerBuilder::build() {
     if (existed_loggers.count(path)) {
         throw std::logic_error("Logger already exists");
+    }
+    if (!current_handler) {
+        throw std::logic_error("No handlers added to logger");
     }
     existed_loggers.insert(path);
 
