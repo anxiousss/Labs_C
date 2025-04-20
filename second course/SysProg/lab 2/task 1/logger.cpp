@@ -1,5 +1,6 @@
 #include "logger.hpp"
 #include <filesystem>
+#include <utility>
 
 bool Logger::registerLogger(const std::string& name) {
     std::lock_guard<std::mutex> lock(registration_mutex);
@@ -15,8 +16,26 @@ void Logger::unregisterLogger(const std::string& name) {
     existed_loggers.erase(name);
 }
 
-FileLogger::FileLogger(const std::string& name_, log_lvl level_, const std::string& file_path_)
-        : name(name_), allowed_level(level_), file_path(file_path_) {
+std::string Logger::getCurrentTime() {
+    auto now = std::chrono::system_clock::now();
+    auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+            now.time_since_epoch()) % 1000;
+
+    std::time_t t = std::chrono::system_clock::to_time_t(now);
+
+    {
+        std::lock_guard<std::mutex> lock(time_mutex);
+        tm_buf = *std::localtime(&t);
+    }
+
+    std::stringstream ss;
+    ss << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S")
+       << "." << std::setfill('0') << std::setw(3) << ms.count();
+    return ss.str();
+}
+
+FileLogger::FileLogger(std::string  name_, log_lvl level_, const std::string& file_path_)
+        : name(std::move(name_)), allowed_level(level_), file_path(file_path_) {
     if (!Logger::registerLogger(name)) {
         throw std::logic_error("Logger '" + name + "' already exists");
     }

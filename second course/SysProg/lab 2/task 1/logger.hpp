@@ -30,24 +30,7 @@ public:
     static void unregisterLogger(const std::string& name);
 
 protected:
-    static std::string getCurrentTime() {
-        auto now = std::chrono::system_clock::now();
-        auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-                now.time_since_epoch()) % 1000;
-
-        std::time_t t = std::chrono::system_clock::to_time_t(now);
-
-        {
-            std::lock_guard<std::mutex> lock(time_mutex);
-            tm_buf = *std::localtime(&t);
-        }
-
-        std::stringstream ss;
-        ss << std::put_time(&tm_buf, "%Y-%m-%d %H:%M:%S")
-           << "." << std::setfill('0') << std::setw(3) << ms.count();
-        return ss.str();
-    }
-
+    static std::string getCurrentTime();
     std::mutex mut;
     inline static std::mutex time_mutex;
     inline static std::mutex registration_mutex;
@@ -57,7 +40,7 @@ protected:
 
 class FileLogger : public Logger {
 public:
-    FileLogger(const std::string& name, log_lvl level, const std::string& file_path);
+    FileLogger(std::string  name, log_lvl level, const std::string& file_path);
     void write(const std::string& msg, log_lvl lvl) override;
     void close() override;
 
@@ -67,7 +50,7 @@ private:
     std::string file_path;
     std::ofstream file_stream;
 
-    const char* levelToString(log_lvl lvl);
+    static const char* levelToString(log_lvl lvl);
 };
 
 class ConsoleLogger : public Logger {
@@ -81,7 +64,7 @@ private:
     log_lvl allowed_level;
     std::ostream& output;
 
-    const char* levelToString(log_lvl lvl);
+    static const char* levelToString(log_lvl lvl);
 };
 
 class LoggerBuilder {
