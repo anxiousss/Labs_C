@@ -4,11 +4,7 @@
 
 bool Logger::registerLogger(const std::string& name) {
     std::lock_guard<std::mutex> lock(registration_mutex);
-    if (existed_loggers.count(name)) {
-        return false;
-    }
-    existed_loggers.insert(name);
-    return true;
+    return existed_loggers.insert(name).second;
 }
 
 void Logger::unregisterLogger(const std::string& name) {
@@ -22,6 +18,7 @@ std::string Logger::getCurrentTime() {
             now.time_since_epoch()) % 1000;
 
     std::time_t t = std::chrono::system_clock::to_time_t(now);
+    std::tm tm_buf;
 
     {
         std::lock_guard<std::mutex> lock(time_mutex);
@@ -34,9 +31,20 @@ std::string Logger::getCurrentTime() {
     return ss.str();
 }
 
-FileLogger::FileLogger(std::string  name_, log_lvl level_, const std::string& file_path_)
-        : name(std::move(name_)), allowed_level(level_), file_path(file_path_) {
-    if (!Logger::registerLogger(name)) {
+const char* Logger::level_info(log_lvl lvl) {
+    switch(lvl) {
+        case log_lvl::DEBUG: return "DEBUG";
+        case log_lvl::INFO: return "INFO";
+        case log_lvl::WARNING: return "WARNING";
+        case log_lvl::ERROR: return "ERROR";
+        case log_lvl::CRITICAL: return "CRITICAL";
+        default: return "UNKNOWN";
+    }
+}
+
+FileLogger::FileLogger(std::string  name_, log_lvl level_, std::string  file_path_)
+        : Logger(level_), name(std::move(name_)), file_path(std::move(file_path_)) {
+    if (!registerLogger(name)) {
         throw std::logic_error("Logger '" + name + "' already exists");
     }
 
@@ -48,7 +56,7 @@ FileLogger::FileLogger(std::string  name_, log_lvl level_, const std::string& fi
 
     file_stream.open(file_path, std::ios::app);
     if (!file_stream.is_open()) {
-        Logger::unregisterLogger(name);
+        unregisterLogger(name);
         throw std::runtime_error("Failed to open log file: " + file_path);
     }
 }
@@ -62,7 +70,7 @@ void FileLogger::write(const std::string& msg, log_lvl lvl) {
     }
 
     file_stream << "[" << getCurrentTime() << "] "
-                << "[" << levelToString(lvl) << "] "
+                << "[" << level_info(lvl) << "] "
                 << msg << std::endl;
 }
 
@@ -71,23 +79,12 @@ void FileLogger::close() {
     if (file_stream.is_open()) {
         file_stream.close();
     }
-    Logger::unregisterLogger(name);
-}
-
-const char* FileLogger::levelToString(log_lvl lvl) {
-    switch(lvl) {
-        case log_lvl::DEBUG: return "DEBUG";
-        case log_lvl::INFO: return "INFO";
-        case log_lvl::WARNING: return "WARNING";
-        case log_lvl::ERROR: return "ERROR";
-        case log_lvl::CRITICAL: return "CRITICAL";
-        default: return "UNKNOWN";
-    }
+    unregisterLogger(name);
 }
 
 ConsoleLogger::ConsoleLogger(std::string  name_, log_lvl level_)
-        : name(std::move(name_)), allowed_level(level_), output(std::cout) {
-    if (!Logger::registerLogger(name)) {
+        : Logger(level_), name(std::move(name_)) {
+    if (!registerLogger(name)) {
         throw std::logic_error("Logger '" + name + "' already exists");
     }
 }
@@ -97,25 +94,14 @@ void ConsoleLogger::write(const std::string& msg, log_lvl lvl) {
 
     std::lock_guard<std::mutex> lock(mut);
     output << "[" << getCurrentTime() << "] "
-           << "[" << levelToString(lvl) << "] "
+           << "[" << level_info(lvl) << "] "
            << msg << std::endl;
 }
 
 void ConsoleLogger::close() {
     std::lock_guard<std::mutex> lock(mut);
     output.flush();
-    Logger::unregisterLogger(name);
-}
-
-const char* ConsoleLogger::levelToString(log_lvl lvl) {
-    switch(lvl) {
-        case log_lvl::DEBUG: return "DEBUG";
-        case log_lvl::INFO: return "INFO";
-        case log_lvl::WARNING: return "WARNING";
-        case log_lvl::ERROR: return "ERROR";
-        case log_lvl::CRITICAL: return "CRITICAL";
-        default: return "UNKNOWN";
-    }
+    unregisterLogger(name);
 }
 
 LoggerBuilder::LoggerBuilder(std::string name_) : name(std::move(name_)) {}

@@ -30,41 +30,41 @@ public:
     static void unregisterLogger(const std::string& name);
 
 protected:
-    static std::string getCurrentTime();
+    Logger(log_lvl level) : allowed_level(level) {}
+
     std::mutex mut;
+    log_lvl allowed_level;
+
+    static std::string getCurrentTime();
+
+    static const char* level_info(log_lvl lvl);
+
     inline static std::mutex time_mutex;
     inline static std::mutex registration_mutex;
     inline static std::set<std::string> existed_loggers;
-    inline static std::tm tm_buf;
 };
 
 class FileLogger : public Logger {
 public:
-    FileLogger(std::string  name, log_lvl level, const std::string& file_path);
+    FileLogger(std::string  name, log_lvl level, std::string  file_path);
     void write(const std::string& msg, log_lvl lvl) override;
     void close() override;
 
 private:
     std::string name;
-    log_lvl allowed_level;
     std::string file_path;
     std::ofstream file_stream;
-
-    static const char* levelToString(log_lvl lvl);
 };
 
 class ConsoleLogger : public Logger {
 public:
-    ConsoleLogger(std::string name, log_lvl level);
+    ConsoleLogger(std::string  name, log_lvl level);
     void write(const std::string& msg, log_lvl lvl) override;
     void close() override;
 
 private:
     std::string name;
-    log_lvl allowed_level;
-    std::ostream& output;
-
-    static const char* levelToString(log_lvl lvl);
+    std::ostream& output = std::cout;
 };
 
 class LoggerBuilder {
