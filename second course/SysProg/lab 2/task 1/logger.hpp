@@ -23,7 +23,13 @@ enum class log_lvl {
 class Logger {
 public:
     virtual ~Logger() = default;
-    virtual void write(const std::string& msg, log_lvl lvl) = 0;
+
+    virtual void LogDebug(const std::string& msg) { write(msg, log_lvl::DEBUG); }
+    virtual void LogInfo(const std::string& msg)  { write(msg, log_lvl::INFO); }
+    virtual void LogWarning(const std::string& msg) { write(msg, log_lvl::WARNING); }
+    virtual void LogError(const std::string& msg) { write(msg, log_lvl::ERROR); }
+    virtual void LogCritic(const std::string& msg) { write(msg, log_lvl::CRITICAL); }
+
     virtual void close() = 0;
 
     static bool registerLogger(const std::string& name);
@@ -32,12 +38,13 @@ public:
 protected:
     Logger(log_lvl level) : allowed_level(level) {}
 
+    virtual void write(const std::string& msg, log_lvl lvl) = 0;
+
     std::mutex mut;
     log_lvl allowed_level;
 
     static std::string getCurrentTime();
-
-    static const char* level_info(log_lvl lvl);
+    const char* level_info(log_lvl lvl);
 
     inline static std::mutex time_mutex;
     inline static std::mutex registration_mutex;
@@ -46,9 +53,11 @@ protected:
 
 class FileLogger : public Logger {
 public:
-    FileLogger(std::string  name, log_lvl level, std::string  file_path);
-    void write(const std::string& msg, log_lvl lvl) override;
+    FileLogger(std::string name, log_lvl level, std::string file_path);
     void close() override;
+
+protected:
+    void write(const std::string& msg, log_lvl lvl) override;
 
 private:
     std::string name;
@@ -58,9 +67,11 @@ private:
 
 class ConsoleLogger : public Logger {
 public:
-    ConsoleLogger(std::string  name, log_lvl level);
-    void write(const std::string& msg, log_lvl lvl) override;
+    ConsoleLogger(std::string name, log_lvl level);
     void close() override;
+
+protected:
+    void write(const std::string& msg, log_lvl lvl) override;
 
 private:
     std::string name;

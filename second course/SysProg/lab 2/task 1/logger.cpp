@@ -66,7 +66,7 @@ void FileLogger::write(const std::string& msg, log_lvl lvl) {
 
     std::lock_guard<std::mutex> lock(mut);
     if (!file_stream.is_open()) {
-        throw std::runtime_error("Log file '" + file_path + "' is closed");
+        throw std::runtime_error("Log file is closed");
     }
 
     file_stream << "[" << getCurrentTime() << "] "
