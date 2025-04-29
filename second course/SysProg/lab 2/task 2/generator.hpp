@@ -49,7 +49,7 @@ private:
     mutable std::mutex stats_mutex_;
     std::map<in_addr_t, SessionStats> stats_;
 
-    std::string ip_to_string(in_addr_t ip);
+    static std::string ip_to_string(in_addr_t ip);
 
-    void worker_thread(int sourceId);
+    void worker_thread();
 };
