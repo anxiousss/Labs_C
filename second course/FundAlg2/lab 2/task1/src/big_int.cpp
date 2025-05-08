@@ -60,7 +60,7 @@ BigInt::BigInt(const std::string &str, unsigned int base): base(base) {
     }
 
 
-    }
+}
 
 
 
@@ -91,26 +91,70 @@ BigInt& BigInt::operator=(BigInt&& other) noexcept {
 
 BigInt BigInt::operator+(const BigInt& other) const {
     if (base != other.base) {
-        throw std::invalid_argument("Different bases");
+        throw std::invalid_argument("Bases must be the same");
     }
 
+    BigInt result(0, base);
     if (isNegative == other.isNegative) {
-        BigInt result = add(other);
+        result = absoluteAdd(other);
         result.isNegative = isNegative;
-        return result;
-    }
-
-
-    if (compareMagnitude(other) >= 0) {
-        BigInt result = subtract(other);
-        result.isNegative = isNegative;
-        return result;
     } else {
-        BigInt result = other.subtract(*this);
-        result.isNegative = other.isNegative;
-        return result;
+        int cmp = compareMagnitude(other);
+        if (cmp == 0) {
+            return BigInt(0, base);
+        } else if (cmp > 0) {
+            result = absoluteSubtract(other);
+            result.isNegative = isNegative;
+        } else {
+            result = other.absoluteSubtract(*this);
+            result.isNegative = other.isNegative;
+        }
     }
+
+    result.removeLeadingZeros();
+    return result;
 }
+
+BigInt BigInt::absoluteAdd(const BigInt& other) const {
+    BigInt result(0, base);
+    size_t maxSize = std::max(digits.size(), other.digits.size());
+    unsigned long long carry = 0;
+
+    for (size_t i = 0; i < maxSize || carry; ++i) {
+        unsigned long long sum = carry;
+        if (i < digits.size()) sum += digits[i];
+        if (i < other.digits.size()) sum += other.digits[i];
+        carry = sum / base;
+        result.digits.push_back(sum % base);
+    }
+
+    return result;
+}
+
+BigInt BigInt::absoluteSubtract(const BigInt& other) const {
+    BigInt result(0, base);
+    unsigned long long borrow = 0;
+
+    for (size_t i = 0; i < digits.size(); ++i) {
+        long long diff = digits[i] - borrow;
+        borrow = 0;
+
+        if (i < other.digits.size()) {
+            diff -= other.digits[i];
+        }
+
+        if (diff < 0) {
+            diff += base;
+            borrow = 1;
+        }
+
+        result.digits.push_back(diff);
+    }
+
+    result.removeLeadingZeros();
+    return result;
+}
+
 
 
 BigInt BigInt::operator-(const BigInt& other) const {
@@ -248,26 +292,24 @@ std::ostream& operator<<(std::ostream& os, const BigInt& num) {
 }
 
 void BigInt::removeLeadingZeros() {
-    if (((digits.size() == 1 and digits[0] == 0) || digits.empty()) && isNegative) {
-        isNegative = false;
+    while (digits.size() > 1 && digits.front() == 0) {
+        digits.erase(digits.begin());
     }
-    for (auto it = digits.begin(); it != digits.end(); ++it) {
-        if (*it == 0) {
-            //std::cout << *it << " " << std::endl;
-            digits.erase(it);
-        } else {
-            return;
-        }
+    if (digits.empty()) {
+        digits.push_back(0);
+        isNegative = false;
     }
 }
 
+
+
 int BigInt::compareMagnitude(const BigInt& other) const {
     if (digits.size() != other.digits.size()) {
-        return digits.size() < other.digits.size() ? -1 : 1;
+        return digits.size() > other.digits.size() ? 1 : -1;
     }
     for (int i = digits.size() - 1; i >= 0; --i) {
         if (digits[i] != other.digits[i]) {
-            return digits[i] < other.digits[i] ? -1 : 1;
+            return digits[i] > other.digits[i] ? 1 : -1;
         }
     }
     return 0;
@@ -401,4 +443,3 @@ BigInt BigInt::convertToBase(unsigned int newBase) const {
     result.isNegative = isNegative;
     return result;
 }
-

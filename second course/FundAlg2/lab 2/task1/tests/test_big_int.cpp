@@ -1,7 +1,8 @@
 #include "../include/big_int.hpp"
 
 int main() {
-    BigInt b("123", 10);
-    BigInt a("123", 10);
-    std::cout << a + b;
+    BigInt a(123, 10);
+    BigInt b(-126, 10);
+
+    std::cout << a + b << std::endl;
 }

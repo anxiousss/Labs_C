@@ -53,6 +53,11 @@ private:
     int compareMagnitude(const BigInt& other) const;
     BigInt add(const BigInt& other) const;
     BigInt subtract(const BigInt& other) const;
+
+    BigInt absoluteAdd(const BigInt& other) const;
+    BigInt absoluteSubtract(const BigInt& other) const;
+
+
     std::pair<BigInt, BigInt> divide(const BigInt& divisor) const;
 
     static unsigned char digitToChar(unsigned long long digit);
