@@ -45,7 +45,6 @@ BigInt::BigInt(const std::string &str, unsigned int base): base(base) {
     auto it = str.rbegin();
     if (str.at(0) == '-') {
         isNegative = true;
-        ++it;
     } else {
         isNegative = false;
     }
@@ -55,8 +54,14 @@ BigInt::BigInt(const std::string &str, unsigned int base): base(base) {
     if (str == "0") {
         digits.push_back(0);
     } else {
-        for (;it != str.rend(); it++) {
-            digits.push_back((static_cast<int>(*it) - 48) % base);
+        if (isNegative) {
+            for (; it != str.rend() - 1; it++) {
+                digits.push_back((static_cast<int>(*it) - 48) % base);
+            }
+        } else {
+            for (; it != str.rend(); it++) {
+                digits.push_back((static_cast<int>(*it) - 48) % base);
+            }
         }
     }
 

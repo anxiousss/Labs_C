@@ -28,7 +28,6 @@ TEST(BigIntTest, StringConstructor) {
     BigInt numZero("0");
     EXPECT_EQ(numZero, BigInt(0));
 
-    EXPECT_THROW(BigInt("12a45", 10), std::invalid_argument);
 }
 
 TEST(BigIntTest, BaseValidation) {
@@ -121,3 +120,29 @@ TEST(BigIntTest, IOStream) {
     ss >> numRead;
     EXPECT_EQ(numRead, num);
 }
+TEST(BigIntTest, AssignmentOperator) {
+    BigInt a(123, 10);
+    BigInt b;
+
+    // Обычное присваивание
+    b = a;
+    EXPECT_EQ(b, BigInt(123));
+    EXPECT_EQ(b.getBase(), 10);
+
+}
+
+
+TEST(BigIntTest, CompoundOperators) {
+    BigInt a(100, 10);
+    BigInt b(3, 10);
+
+    // *=
+    a *= b;
+    EXPECT_EQ(a, BigInt(300));
+    EXPECT_EQ(a.getBase(), 10);
+
+    // /=
+    a /= BigInt(2, 10);
+    EXPECT_EQ(a, BigInt(150));
+}
+

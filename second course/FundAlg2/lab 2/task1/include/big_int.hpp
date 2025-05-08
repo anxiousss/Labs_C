@@ -36,6 +36,7 @@ public:
 
 
     [[nodiscard]] unsigned int getBase() const { return base; }
+    [[nodiscard]] bool getNegative() const { return isNegative;}
 
     friend std::istream& operator>>(std::istream& is, BigInt& num);
     friend std::ostream& operator<<(std::ostream& os, const BigInt& num);
@@ -51,7 +52,6 @@ private:
 
     [[nodiscard]] BigInt absoluteAdd(const BigInt& other) const;
     [[nodiscard]] BigInt absoluteSubtract(const BigInt& other) const;
-
 
     [[nodiscard]] std::pair<BigInt, BigInt> divide(const BigInt& divisor) const;
 
