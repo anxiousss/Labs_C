@@ -32,13 +32,10 @@ public:
     BigInt operator--(int);
 
     bool operator==(const BigInt& other) const;
-    bool operator!=(const BigInt& other) const;
-    bool operator<(const BigInt& other) const;
-    bool operator>(const BigInt& other) const;
-    bool operator<=(const BigInt& other) const;
-    bool operator>=(const BigInt& other) const;
+    std::strong_ordering operator<=>(const BigInt& other) const;
 
-    unsigned int getBase() const { return base; }
+
+    [[nodiscard]] unsigned int getBase() const { return base; }
 
     friend std::istream& operator>>(std::istream& is, BigInt& num);
     friend std::ostream& operator<<(std::ostream& os, const BigInt& num);
@@ -50,17 +47,13 @@ private:
     unsigned int base;
 
     void removeLeadingZeros();
-    int compareMagnitude(const BigInt& other) const;
-    BigInt add(const BigInt& other) const;
-    BigInt subtract(const BigInt& other) const;
+    [[nodiscard]] int compareMagnitude(const BigInt& other) const;
 
-    BigInt absoluteAdd(const BigInt& other) const;
-    BigInt absoluteSubtract(const BigInt& other) const;
+    [[nodiscard]] BigInt absoluteAdd(const BigInt& other) const;
+    [[nodiscard]] BigInt absoluteSubtract(const BigInt& other) const;
 
 
-    std::pair<BigInt, BigInt> divide(const BigInt& divisor) const;
+    [[nodiscard]] std::pair<BigInt, BigInt> divide(const BigInt& divisor) const;
 
-    static unsigned char digitToChar(unsigned long long digit);
-    static unsigned long long charToDigit(char c, unsigned int base);
-    BigInt convertToBase(unsigned int newBase) const;
+    static BigInt convertToBase(const BigInt& bigInt, unsigned int newBase);
 };
