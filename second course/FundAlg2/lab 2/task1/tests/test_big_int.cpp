@@ -124,7 +124,6 @@ TEST(BigIntTest, AssignmentOperator) {
     BigInt a(123, 10);
     BigInt b;
 
-    // Обычное присваивание
     b = a;
     EXPECT_EQ(b, BigInt(123));
     EXPECT_EQ(b.getBase(), 10);
@@ -136,13 +135,37 @@ TEST(BigIntTest, CompoundOperators) {
     BigInt a(100, 10);
     BigInt b(3, 10);
 
-    // *=
     a *= b;
     EXPECT_EQ(a, BigInt(300));
     EXPECT_EQ(a.getBase(), 10);
 
-    // /=
     a /= BigInt(2, 10);
     EXPECT_EQ(a, BigInt(150));
 }
 
+TEST(BigIntDiffBaseTest, CorrectBaseInterpretation) {
+    BigInt a("100", 100);
+    EXPECT_EQ(a, BigInt(10000, 10));
+
+    BigInt b("123", 100);
+    EXPECT_EQ(b, BigInt(10203, 10));
+}
+
+TEST(BigIntDiffBaseTest, FixedMixedBaseOperations) {
+
+    BigInt a("100", 100);
+    BigInt b(1000, 10);
+    EXPECT_EQ(a + b, BigInt(11000, 10));
+
+    BigInt c("500", 100);
+    BigInt d(25000, 10);
+    EXPECT_EQ(c - d, BigInt(25000, 10));
+
+    BigInt e("200", 100);
+    BigInt f(3, 10);
+    EXPECT_EQ(e * f, BigInt(60000, 10));
+
+    BigInt g("100", 1000);
+    BigInt h(1000, 10);
+    EXPECT_EQ(g / h, BigInt(1000, 10));
+}

@@ -10,7 +10,6 @@ BigInt::BigInt() : isNegative(false), base(10) {
     digits.push_back(0);
 }
 
-//основа должна быть степенью 10
 BigInt::BigInt(long long value, unsigned int base) : base(base) {
     if (base % 10 != 0) {
         throw std::invalid_argument("base must be power of 10\n");
@@ -171,8 +170,10 @@ BigInt BigInt::absoluteSubtract(const BigInt& other) const {
 
 BigInt BigInt::operator-(const BigInt& other) const {
     if (base != other.base) {
-        BigInt b = BigInt::convertToBase(other, this->base);
-        return *this - b;    }
+        BigInt a = BigInt::convertToBase(*this, 10);
+        BigInt b = BigInt::convertToBase(other, 10);
+        return a - b;
+    }
 
     BigInt temp = other;
     temp.isNegative = !temp.isNegative;
@@ -181,8 +182,10 @@ BigInt BigInt::operator-(const BigInt& other) const {
 
 BigInt BigInt::operator*(const BigInt& other) const {
     if (base != other.base) {
-        BigInt b = BigInt::convertToBase(other, this->base);
-        return *this * b;    }
+        BigInt a = BigInt::convertToBase(*this, 10);
+        BigInt b = BigInt::convertToBase(other, 10);
+        return a * b;
+    }
 
     BigInt result(0, base);
     result.digits.resize(digits.size() + other.digits.size(), 0);
@@ -204,8 +207,9 @@ BigInt BigInt::operator*(const BigInt& other) const {
 
 BigInt BigInt::operator/(const BigInt& other) const {
     if (base != other.base) {
-        BigInt b = BigInt::convertToBase(other, this->base);
-        return *this / b;
+        BigInt a = BigInt::convertToBase(*this, 10);
+        BigInt b = BigInt::convertToBase(other, 10);
+        return a / b;
     }
     auto [quotient, remainder] = divide(other);
     return quotient;
