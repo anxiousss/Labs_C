@@ -169,3 +169,55 @@ TEST(BigIntDiffBaseTest, FixedMixedBaseOperations) {
     BigInt h(1000, 10);
     EXPECT_EQ(g / h, BigInt(1000, 10));
 }
+
+TEST(BigIntLargeNumbersTest, LargeAddition) {
+    BigInt a("123456789012345678901234567890", 10);
+    BigInt b("987654321098765432109876543210", 10);
+    BigInt expected("1111111110111111111011111111100", 10);
+    EXPECT_EQ(a + b, expected);
+}
+
+TEST(BigIntLargeNumbersTest, LargeMultiplication) {
+    BigInt a("123456789012345678901234567890", 10);
+    BigInt b("2", 10);
+    BigInt expected("246913578024691357802469135780", 10);
+    EXPECT_EQ(a * b, expected);
+}
+
+TEST(BigIntLargeNumbersTest, LargeDivision) {
+    BigInt a("246913578024691357802469135780", 10);
+    BigInt b("2", 10);
+    BigInt expected("123456789012345678901234567890", 10);
+    EXPECT_EQ(a / b, expected);
+}
+
+
+TEST(BigIntLargeBaseTest, Base10000Operations) {
+    BigInt a("5000", 10000);
+    BigInt b("3", 10000);
+    BigInt expected("15000", 10000);
+    EXPECT_EQ(a * b, expected);
+
+    BigInt c("9999", 10000);
+    BigInt d("1", 10000);
+    BigInt sum("10000", 10000);
+    EXPECT_EQ(c + d, sum);
+}
+
+TEST(BigIntMixedBaseTest, CrossBaseOperations) {
+    BigInt a("1000000", 10);
+    BigInt b("1000", 1000);
+    BigInt expected("2000000", 10);
+    EXPECT_EQ(a + b, expected);
+}
+
+TEST(BigIntEdgeCaseTest, ExtremelyLargeNumber) {
+    std::string large_number(1000, '9');
+    BigInt a(large_number, 10);
+    BigInt b("1", 10);
+    BigInt result = a + b;
+
+    std::string expected(large_number.size() + 1, '0');
+    expected[0] = '1';
+    EXPECT_EQ(result, BigInt(expected, 10));
+}
