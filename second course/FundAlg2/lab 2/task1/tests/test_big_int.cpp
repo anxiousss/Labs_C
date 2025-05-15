@@ -28,6 +28,8 @@ TEST(BigIntTest, StringConstructor) {
     BigInt numZero("0");
     EXPECT_EQ(numZero, BigInt(0));
 
+    EXPECT_THROW(BigInt("123", 15), std::invalid_argument);
+
 }
 
 TEST(BigIntTest, BaseValidation) {
@@ -144,30 +146,30 @@ TEST(BigIntTest, CompoundOperators) {
 }
 
 TEST(BigIntDiffBaseTest, CorrectBaseInterpretation) {
-    BigInt a("100", 100);
+    BigInt a("10000", 100);
     EXPECT_EQ(a, BigInt(10000, 10));
 
-    BigInt b("123", 100);
+    BigInt b("10203", 100);
     EXPECT_EQ(b, BigInt(10203, 10));
 }
 
 TEST(BigIntDiffBaseTest, FixedMixedBaseOperations) {
 
-    BigInt a("100", 100);
-    BigInt b(1000, 10);
+    BigInt a("1000", 100);
+    BigInt b(10000, 10);
     EXPECT_EQ(a + b, BigInt(11000, 10));
 
-    BigInt c("500", 100);
-    BigInt d(25000, 10);
+    BigInt c("25000", 100);
+    BigInt d(0, 10);
     EXPECT_EQ(c - d, BigInt(25000, 10));
 
     BigInt e("200", 100);
     BigInt f(3, 10);
-    EXPECT_EQ(e * f, BigInt(60000, 10));
+    EXPECT_EQ(e * f, BigInt(600, 10));
 
-    BigInt g("100", 1000);
+    BigInt g("10000", 1000);
     BigInt h(1000, 10);
-    EXPECT_EQ(g / h, BigInt(1000, 10));
+    EXPECT_EQ(g / h, BigInt(10, 10));
 }
 
 TEST(BigIntLargeNumbersTest, LargeAddition) {
@@ -207,7 +209,7 @@ TEST(BigIntLargeBaseTest, Base10000Operations) {
 TEST(BigIntMixedBaseTest, CrossBaseOperations) {
     BigInt a("1000000", 10);
     BigInt b("1000", 1000);
-    BigInt expected("2000000", 10);
+    BigInt expected("1001000", 10);
     EXPECT_EQ(a + b, expected);
 }
 

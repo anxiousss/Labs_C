@@ -51,7 +51,6 @@ private:
 
     [[nodiscard]] BigInt absoluteAdd(const BigInt& other) const;
     [[nodiscard]] BigInt absoluteSubtract(const BigInt& other) const;
-    std::string toString() const;
     [[nodiscard]] std::pair<BigInt, BigInt> divide(const BigInt& divisor) const;
 
     static BigInt convertToBase(const BigInt& bigInt, unsigned int newBase);

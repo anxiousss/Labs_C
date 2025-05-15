@@ -40,6 +40,10 @@ BigInt::BigInt(long long value, unsigned int base) : base(base) {
 
 BigInt::BigInt(const std::string& str, unsigned int base) : base(base) {
 
+    if (base % 10 != 0) {
+        throw std::invalid_argument("base must be power of 10\n");
+    }
+
     isNegative = false;
     size_t start = 0;
 
@@ -60,9 +64,6 @@ BigInt::BigInt(const std::string& str, unsigned int base) : base(base) {
         int start_pos = std::max(0, pos - chunk_size);
         std::string chunk = num_str.substr(start_pos, pos - start_pos);
         unsigned long long digit = std::stoull(chunk);
-        if (digit >= base) {
-            throw std::invalid_argument("Digit exceeds base value");
-        }
         digits.push_back(digit);
     }
 
@@ -142,7 +143,7 @@ BigInt BigInt::absoluteAdd(const BigInt& other) const {
     }
 
     return result;
-}
+} //LCOV_EXCL_LINE
 
 BigInt BigInt::absoluteSubtract(const BigInt& other) const {
     BigInt result(0, base);
@@ -164,7 +165,7 @@ BigInt BigInt::absoluteSubtract(const BigInt& other) const {
     }
     result.removeLeadingZeros();
     return result;
-}
+} //LCOV_EXCL_LINE
 
 
 
@@ -250,18 +251,18 @@ BigInt BigInt::operator++(int) {
     BigInt temp = *this;
     ++*this;
     return temp;
-}
+} //LCOV_EXCL_LINE
 
 BigInt& BigInt::operator--() {
     *this -= BigInt(1, base);
     return *this;
-}
+} //LCOV_EXCL_LINE
 
 BigInt BigInt::operator--(int) {
     BigInt temp = *this;
     --*this;
     return temp;
-}
+} //LCOV_EXCL_LINE
 
 bool BigInt::operator==(const BigInt& other) const {
     if (base != other.base) {
@@ -385,20 +386,4 @@ std::strong_ordering BigInt::operator<=>(const BigInt &other) const {
         }
     }
     return std::strong_ordering::equivalent;
-}
-
-std::string BigInt::toString() const {
-    if (digits.empty()) return "0";
-
-    std::stringstream ss;
-    if (isNegative) {
-        ss << "-";
-    }
-
-    for (auto it = digits.rbegin(); it != digits.rend(); ++it) {
-        ss << *it;
-    }
-
-    std::string result = ss.str();
-    return result;
 }
