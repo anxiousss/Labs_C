@@ -191,6 +191,10 @@ TEST(BigIntTest, ModuloOperator) {
     BigInt h("123456789", 10);
     BigInt i("98765", 10);
     EXPECT_EQ(h % i, BigInt(123456789 % 98765));
+
+    BigInt j("10", 10);
+    BigInt k("0", 10);
+    EXPECT_THROW(j % k , std::invalid_argument);
 }
 
 TEST(BigIntTest, ModuloEdgeCases) {
@@ -223,4 +227,18 @@ TEST(BigIntTest, ModExpNegativeBase) {
 TEST(BigIntTest, ModExpModComparison) {
     EXPECT_EQ(BigInt::mod_exp(BigInt(3), BigInt(4), BigInt(10)), BigInt(1));
     EXPECT_EQ(BigInt::mod_exp(BigInt(7), BigInt(2), BigInt(5)), BigInt(4));
+}
+
+TEST(BigIntTest, ModExpFirstDegree) {
+    EXPECT_EQ(BigInt::mod_exp(BigInt(1334), BigInt{1}, BigInt{123}),BigInt(1334) % BigInt(123) );
+}
+
+
+TEST(BigIntTest, RSAStyle) {
+    BigInt base = BigInt("123456789");
+    BigInt exp = BigInt("65537");
+    BigInt mod = BigInt("9999999999999999999999999999999999999999");
+    BigInt expected = BigInt("3998715939003586657620876187641639516468");
+    BigInt result = BigInt::mod_exp(base, exp, mod);
+    EXPECT_EQ(result, expected);
 }

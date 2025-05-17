@@ -16,13 +16,8 @@ BigInt::BigInt(long long value, unsigned int base) : base(base) {
     }
     isNegative = (value < 0);
 
-    unsigned long long abs_value;
-    if (value == LLONG_MIN) {
-        abs_value = static_cast<unsigned long long>(LLONG_MAX) + 1;
-    } else {
-        abs_value = std::abs(value);
-    }
 
+    unsigned long long abs_value = std::abs(value);
     if (abs_value == 0) {
         digits.push_back(0);
     } else {
