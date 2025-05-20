@@ -161,4 +161,3 @@ namespace my_container {
         EXPECT_TRUE(d1 <=> d2 == std::strong_ordering::less);
     }
 }
-// namespace my_container
