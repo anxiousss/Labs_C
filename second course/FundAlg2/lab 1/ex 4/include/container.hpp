@@ -1,8 +1,4 @@
 
-
-#ifndef FUNDALG_CONTAINER_HPP
-#define FUNDALG_CONTAINER_HPP
-
 #pragma once
 
 #include <iostream>
@@ -11,14 +7,11 @@
 template<typename T>
 class Container {
 public:
-    using iterator = T *;
-    using const_iterator = const T *;
-
     Container() = default;
 
     Container(const Container &container) = default;
 
-    Container &operator=(const Container &container) = default;
+    virtual Container &operator=(const Container &container) = 0;
 
     virtual ~Container() = default;
 
@@ -27,9 +20,7 @@ public:
 
     virtual size_t size() const = 0;
 
-    virtual size_t max_size() const noexcept = 0;
+    virtual size_t max_size() const = 0;
 
     virtual bool empty() const = 0;
 };
-
-#endif //FUNDALG_CONTAINER_HPP
