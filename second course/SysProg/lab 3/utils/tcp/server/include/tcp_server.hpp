@@ -1,32 +1,36 @@
+
 #pragma once
 
+
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <unistd.h>
+#include <cstring>
 #include <string>
+#include <stdexcept>
+#include <iostream>
+#include <vector>
 #include <thread>
+#include <map>
 
-class Task {
+#include "logger.hpp"
+
+class TcpServer {
 public:
-    Task();
-    virtual int complete_task() = 0;
-
+    TcpServer();
+    int recv_msg(int s);
+    int accept_msg() {
+        int client_socket = accept(server_socket, nullptr, nullptr);
+        return client_socket;
+    }
+    ~TcpServer();
 private:
-    int id;
-    std::string msg;
-    std::thread thread;
+    // std::map<int, std::thread> data;
+    int server_socket;
+    sockaddr_in serverAddress{};
+    std::unique_ptr<Logger> logger;
+    // тут sh_mem & semaphore for subprocess
 
 };
 
-class TaskCompile: public Task {
-public:
-    int complete_task() override {
-        //logic
-        return 0;
-    }
-};
 
-class TaskStick: public Task {
-public:
-    int complete_task() override {
-        //logic
-        return 0;
-    }
-};

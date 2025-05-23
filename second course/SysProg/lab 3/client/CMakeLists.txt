@@ -3,5 +3,5 @@ add_executable(client
         src/client.cpp
 )
 
-target_include_directories(client PRIVATE include ../utils)
-target_link_libraries(client PRIVATE tcp_client tcp_server logger pthread)
+target_include_directories(client PRIVATE include)
+target_link_libraries(client PRIVATE tcp_client logger pthread)

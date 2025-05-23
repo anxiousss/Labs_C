@@ -1,34 +1,34 @@
+
+
 #include "tcp_client.hpp"
 
-void interface() {
-    std::cout << "Choose one of three options." << std::endl;
-    std::cout << "--------------------------------------------------" << std::endl;
-    std::cout << "1 <file_name> - Compile cpp to exe." << std::endl;
-    std::cout << "2 <file_name> - Compile tex to pdf." << std::endl;
-    std::cout << "3 <n_sticks to be taken> - Play stick game." << std::endl;
-    std::cout << "exit to exit" << std::endl;
+TcpClient::TcpClient() {
+    LoggerBuilder file_builder("client.log");
+    logger = file_builder.set_level(log_lvl::DEBUG).set_file("../logs/client.log").build();
+    client_socket = socket(AF_INET, SOCK_STREAM, 0);
+    serverAddress.sin_family = AF_INET;
+    serverAddress.sin_port = htons(8080);
+    serverAddress.sin_addr.s_addr = INADDR_ANY;
+    int err = connect(client_socket, (struct sockaddr*)&serverAddress,sizeof(serverAddress));
+    if (err == -1) {
+        perror("ROFLS");
+        logger->LogError("connection error\n");
+        throw std::domain_error("connection error\n");
+    }
 }
 
-bool check_msg(const std::string& msg) {
-    switch (msg[0]) {
-        case '1':
-            if (msg.ends_with(".cpp")) {
-                return true;
-            }
-            break;
-        case '2':
-            if (msg.ends_with("tex")) {
-                return true;
-            }
-            break;
-        case '3':
-            if (atoi(msg.substr(2).c_str())) {
-                return true;
-            }
-            break;
-        default:
-            break;
+void TcpClient::send_msg(const std::string& msg) {
+    //tcp_traffic_pkg tcpTrafficPkg{ msg.size(), msg.c_str()};
+    ssize_t err = send(client_socket, msg.c_str(), msg.size(), 0);
+    if (err == -1) {
+        logger->LogError("send msg error\n");
+        throw std::domain_error("send msg error\n");
     }
-    std::cout << "Invalid command, try again." << std::endl;
-    return false;
+}
+
+TcpClient::~TcpClient() {
+    int err = close(client_socket);
+    if (err == -1) {
+        logger->LogError("close socket error\n");
+    }
 }

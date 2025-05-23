@@ -1,7 +1,8 @@
-#include "../include/client.hpp"
+#include "client.hpp"
+#include "tcp_client.hpp"
 
 int main() {
-    Client client;
+    TcpClient tcp_client;
     std::string msg;
     interface();
     while (true) {
@@ -10,7 +11,7 @@ int main() {
             break;
         }
         //if (!check_msg(msg)) continue;
-        client.send_msg(msg);
+        tcp_client.send_msg(msg);
         interface();
     }
     return 0;

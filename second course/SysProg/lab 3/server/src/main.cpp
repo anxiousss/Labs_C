@@ -2,9 +2,12 @@
 
 int main() {
 
-    Server server;
+    TcpServer tcp_server;
     while (true) {
-        server.recv_msg();
+        int s = tcp_server.accept_msg();
+        while(true) {
+            tcp_server.recv_msg(s);
+        }
     }
 
     return 0;
