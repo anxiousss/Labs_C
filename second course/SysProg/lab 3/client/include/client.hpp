@@ -5,10 +5,6 @@
 #include <string>
 #include <iostream>
 
-struct tcp_traffic_pkg {
-    size_t sz;
-    const char* msg;
-};
 
 void interface();
 

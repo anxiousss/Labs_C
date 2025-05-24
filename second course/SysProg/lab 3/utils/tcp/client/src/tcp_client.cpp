@@ -18,8 +18,14 @@ TcpClient::TcpClient() {
 }
 
 void TcpClient::send_msg(const std::string& msg) {
-    //tcp_traffic_pkg tcpTrafficPkg{ msg.size(), msg.c_str()};
-    ssize_t err = send(client_socket, msg.c_str(), msg.size(), 0);
+    const char* str_it = msg.c_str();
+    tcp_traffic_pkg tcpTrafficPkg{};
+
+    for (size_t i = 0; i < msg.size(); ++i) {
+        tcpTrafficPkg.msg[i] = str_it[i];
+    }
+    tcpTrafficPkg.sz = msg.size();
+    ssize_t err = send(client_socket, &tcpTrafficPkg, sizeof(tcp_traffic_pkg), 0);
     if (err == -1) {
         logger->LogError("send msg error\n");
         throw std::domain_error("send msg error\n");

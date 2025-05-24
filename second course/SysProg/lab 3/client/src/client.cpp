@@ -22,7 +22,7 @@ bool check_msg(const std::string& msg) {
             }
             break;
         case '3':
-            if (atoi(msg.substr(2).c_str())) {
+            if (atoi(msg.substr(2).c_str()) > 0) {
                 return true;
             }
             break;

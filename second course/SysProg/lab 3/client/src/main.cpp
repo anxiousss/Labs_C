@@ -7,12 +7,12 @@ int main() {
     interface();
     while (true) {
         std::cin >> msg;
-        if (msg == "exit") {
-            break;
-        }
         //if (!check_msg(msg)) continue;
         tcp_client.send_msg(msg);
         interface();
+        if (msg == "exit") {
+            break;
+        }
     }
     return 0;
 }
