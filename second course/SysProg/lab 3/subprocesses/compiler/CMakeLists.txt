@@ -1,7 +1,7 @@
-add_executable(compiler_worker
+add_executable(compiler
         src/main.cpp
         src/compiler.cpp
 )
 
-target_include_directories(compiler_worker PRIVATE include)
-target_link_libraries(compiler_worker PRIVATE logger exceptions shared_memory semaphore pthread)
+target_include_directories(compiler PRIVATE include)
+target_link_libraries(compiler PRIVATE tcp_server logger exceptions shared_memory semaphore pthread)

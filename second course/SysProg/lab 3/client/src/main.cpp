@@ -1,18 +1,42 @@
-#include "client.hpp"
 #include "tcp_client.hpp"
+#include "client.hpp"
+#include <iostream>
+#include <string>
 
 int main() {
-    TcpClient tcp_client;
-    std::string msg;
-    interface();
-    while (true) {
-        std::cin >> msg;
-        //if (!check_msg(msg)) continue;
-        tcp_client.send_msg(msg);
+    try {
+        TcpClient client;
         interface();
-        if (msg == "exit") {
-            break;
+
+        while(true) {
+            std::string msg;
+            std::getline(std::cin, msg);
+
+            if(msg == "exit") {
+                client.send_msg(msg);
+                break;
+            }
+
+            if(!check_msg(msg)) {
+                std::cout << "Invalid command format!" << std::endl;
+                interface();
+                continue;
+            }
+
+            if(msg[0] == '1' || msg[0] == '2') {
+                client.send_msg(msg);
+                client.send_file(msg.substr(2));
+            } else {
+                client.send_msg(msg);
+            }
+
+            auto response = client.receive_response();
+            std::cout << "Server response: " << response << std::endl;
         }
+
+    } catch(const std::exception& e) {
+        std::cerr << "Client error: " << e.what() << std::endl;
+        return EXIT_FAILURE;
     }
-    return 0;
+    return EXIT_SUCCESS;
 }
