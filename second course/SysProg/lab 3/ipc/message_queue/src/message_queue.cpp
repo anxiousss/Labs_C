@@ -1,38 +1,54 @@
 #include "message_queue.hpp"
 
-MessageQueue::MessageQueue(const std::string& path, int proj_id) {
-    key = ftok(path.c_str(), proj_id);
-    if (key == -1) throw std::runtime_error("ftok failed for MessageQueue");
-
-    msg_id = msgget(key, IPC_CREAT | 0666);
-    if (msg_id == -1) throw std::runtime_error("msgget failed");
+MessageQueue::MessageQueue(key_t key)
+        : key_(key), msqid_(-1), logger_(LoggerBuilder("MessageQueue").set_console().build()) {
+    msqid_ = msgget(key_, 0666 | IPC_CREAT);
+    if (msqid_ == -1) {
+        throw std::system_error(errno, std::generic_category(), "msgget failed");
+    }
+    logger_->LogInfo("Created message queue with key: " + std::to_string(key_));
 }
 
 MessageQueue::~MessageQueue() {
-    // Очередь сообщений обычно не удаляется автоматически
+    close();
+
+    if (msgctl(msqid_, IPC_RMID, nullptr) == -1) {
+        logger_->LogError("msgctl IPC_RMID failed: " + std::string(strerror(errno)));
+    }
 }
 
-void MessageQueue::send(const void* msg, size_t size, long mtype) {
-    struct msgbuf {
-        long mtype;
-        char data[1024];
-    } buf;
+void MessageQueue::send(const std::string& message, long type) {
+    if (msqid_ == -1) {
+        throw std::runtime_error("Message queue not initialized");
+    }
 
-    buf.mtype = mtype;
-    memcpy(buf.data, msg, size);
+    MessageBuffer buffer;
+    buffer.mtype = type;
+    strncpy(buffer.mtext, message.c_str(), sizeof(buffer.mtext));
+    buffer.mtext[sizeof(buffer.mtext) - 1] = '\0';
 
-    if (msgsnd(msg_id, &buf, size, 0) == -1)
-        throw std::runtime_error("msgsnd failed");
+    if ( msgsnd(msqid_, &buffer, message.size() + 1, 0) == -1) {
+        throw std::system_error(errno, std::generic_category(), "msgsnd failed");
+    }
+    logger_->LogDebug("Sent message: " + message);
 }
 
-void MessageQueue::receive(void* msg, size_t size, long mtype) {
-    struct msgbuf {
-        long mtype;
-        char data[1024];
-    } buf;
+std::string MessageQueue::receive(long type) {
+    if (msqid_ == -1) {
+        throw std::runtime_error("Message queue not initialized");
+    }
 
-    if (msgrcv(msg_id, &buf, size, mtype, 0) == -1)
-        throw std::runtime_error("msgrcv failed");
+    MessageBuffer buffer;
+    ssize_t bytes_received = msgrcv(msqid_, &buffer, sizeof(buffer.mtext), type, 0);
 
-    memcpy(msg, buf.data, size);
+    if (bytes_received == -1) {
+        throw std::system_error(errno, std::generic_category(), "msgrcv failed");
+    }
+
+    logger_->LogDebug("Received message: " + std::string(buffer.mtext));
+    return std::string(buffer.mtext);
+}
+
+void MessageQueue::close() {
+
 }

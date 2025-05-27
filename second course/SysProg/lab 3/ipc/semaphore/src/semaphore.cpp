@@ -1,30 +1,44 @@
 #include "semaphore.hpp"
 
-Semaphore::Semaphore(const std::string& path, int proj_id, int initial) {
-    key = ftok(path.c_str(), proj_id);
-    if (key == -1) throw std::runtime_error("ftok failed for Semaphore");
-
-    sem_id = semget(key, 1, IPC_CREAT | 0666);
-    if (sem_id == -1) throw std::runtime_error("semget failed");
-
-    union semun arg;
-    arg.val = initial;
-    if (semctl(sem_id, 0, SETVAL, arg) == -1)
-        throw std::runtime_error("semctl failed");
+SharedSemaphore::SharedSemaphore(const std::string& name)
+        : name_("/" + name), sem_(nullptr), logger_(LoggerBuilder("Semaphore").set_console().build()) {
+    sem_ = sem_open(name_.c_str(), O_CREAT | O_RDWR, 0666, 1);
+    if (sem_ == SEM_FAILED) {
+        throw std::system_error(errno, std::generic_category(), "sem_open failed");
+    }
+    logger_->LogInfo("Created semaphore: " + name_);
 }
 
-Semaphore::~Semaphore() {
-    // Семафоры обычно не удаляются автоматически
+SharedSemaphore::~SharedSemaphore() {
+    close();
+    sem_unlink(name_.c_str());
 }
 
-void Semaphore::wait() {
-    struct sembuf op = {0, -1, 0};
-    if (semop(sem_id, &op, 1) == -1)
-        throw std::runtime_error("semop wait failed");
+void SharedSemaphore::close() {
+    if (sem_ != nullptr) {
+        if (sem_close(sem_) == -1) {
+            logger_->LogError("sem_close failed");
+        }
+        sem_ = nullptr;
+    }
 }
 
-void Semaphore::post() {
-    struct sembuf op = {0, 1, 0};
-    if (semop(sem_id, &op, 1) == -1)
-        throw std::runtime_error("semop post failed");
+void SharedSemaphore::wait() {
+    if (sem_ == SEM_FAILED) {
+        throw std::runtime_error("Semaphore not initialized");
+    }
+
+    if (sem_wait(sem_) == -1) {
+        throw std::system_error(errno, std::generic_category(), "sem_wait failed");
+    }
+}
+
+void SharedSemaphore::post() {
+    if (sem_ == SEM_FAILED) {
+        throw std::runtime_error("Semaphore not initialized");
+    }
+
+    if (sem_post(sem_) == -1) {
+        throw std::system_error(errno, std::generic_category(), "sem_post failed");
+    }
 }

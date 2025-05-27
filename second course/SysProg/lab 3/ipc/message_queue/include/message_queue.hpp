@@ -1,19 +1,29 @@
 #pragma once
-
-#include <sys/ipc.h>
 #include <sys/msg.h>
 #include <string>
 #include <stdexcept>
+#include <system_error>
 #include <cstring>
+#include <logger.hpp>
+#include <exceptions.hpp>
+
+
+struct MessageBuffer {
+    long mtype;
+    char mtext[4096];
+};
 
 class MessageQueue {
 public:
-    MessageQueue(const std::string& path, int proj_id);
+    explicit MessageQueue(key_t key);
     ~MessageQueue();
-    void send(const void* msg, size_t size, long mtype = 1);
-    void receive(void* msg, size_t size, long mtype = 0);
+
+    void send(const std::string& message, long type = 1);
+    std::string receive(long type = 0);
+    void close();
 
 private:
-    int msg_id;
-    key_t key;
+    key_t key_;
+    int msqid_;
+    std::unique_ptr<Logger> logger_;
 };

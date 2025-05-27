@@ -1,24 +1,23 @@
 #pragma once
-
-#include <sys/ipc.h>
-#include <sys/sem.h>
+#include <semaphore.h>
 #include <string>
 #include <stdexcept>
+#include <system_error>
+#include <fcntl.h>
+#include <logger.hpp>
+#include <exceptions.hpp>
 
-union semun {
-    int val;
-    struct semid_ds *buf;
-    unsigned short *array;
-};
-
-class Semaphore {
+class SharedSemaphore {
 public:
-    Semaphore(const std::string& path, int proj_id, int initial = 0);
-    ~Semaphore();
+    explicit SharedSemaphore(const std::string& name);
+    ~SharedSemaphore();
+
     void wait();
     void post();
+    void close();
 
 private:
-    int sem_id;
-    key_t key;
+    std::string name_;
+    sem_t* sem_;
+    std::unique_ptr<Logger> logger_;
 };

@@ -1,20 +1,67 @@
+#include <cstring>
 #include "shared_memory.hpp"
 
-SharedMemory::SharedMemory(const std::string& path, int proj_id, size_t size) : size(size) {
-    key = ftok(path.c_str(), proj_id);
-    if (key == -1) throw std::runtime_error("ftok failed for SharedMemory");
+SharedMemoryTask SharedMemoryManager::receive() {
+    if (ptr_ == MAP_FAILED) {
+        throw std::runtime_error(".")
+    }
 
-    shm_id = shmget(key, size, IPC_CREAT | 0666);
-    if (shm_id == -1) throw std::runtime_error("shmget failed");
+    char* data = static_cast<char*>(ptr_);
+    size_t offset = 0;
 
-    data = shmat(shm_id, nullptr, 0);
-    if (data == (void*)-1) throw std::runtime_error("shmat failed");
+    // Чтение данных
+    size_t filename_size = *reinterpret_cast<size_t*>(data + offset);
+    offset += sizeof(size_t);
+
+    std::string filename(data + offset, filename_size);
+    offset += filename_size;
+
+    size_t extension_size = *reinterpret_cast<size_t*>(data + offset);
+    offset += sizeof(size_t);
+
+    std::string extension(data + offset, extension_size);
+    offset += extension_size;
+
+    size_t content_size = *reinterpret_cast<size_t*>(data + offset);
+    offset += sizeof(size_t);
+
+    std::string content(data + offset, content_size);
+
+    return {filename, content, extension, "", false};
 }
 
-SharedMemory::~SharedMemory() {
-    shmdt(data);
-}
+void SharedMemoryManager::send(const SharedMemoryTask& task) {
+    if (ptr_ == MAP_FAILED) {
+        throw std::runtime_error(".")
+    }
 
-void* SharedMemory::getData() const {
-    return data;
+    char* data = static_cast<char*>(ptr_);
+    size_t offset = 0;
+
+    size_t filename_size = task.filename.size();
+    *reinterpret_cast<size_t*>(data + offset) = filename_size;
+    offset += sizeof(size_t);
+
+    std::memcpy(data + offset, task.filename.data(), filename_size);
+    offset += filename_size;
+
+    size_t extension_size = task.extension.size();
+    *reinterpret_cast<size_t*>(data + offset) = extension_size;
+    offset += sizeof(size_t);
+
+    std::memcpy(data + offset, task.extension.data(), extension_size);
+    offset += extension_size;
+
+    size_t content_size = task.content.size();
+    *reinterpret_cast<size_t*>(data + offset) = content_size;
+    offset += sizeof(size_t);
+
+    std::memcpy(data + offset, task.content.data(), content_size);
+    offset += content_size;
+
+    size_t result_size = task.result.size();
+    *reinterpret_cast<size_t*>(data + offset) = result_size;
+    offset += sizeof(size_t);
+
+    std::memcpy(data + offset, task.result.data(), result_size);
 }

@@ -1,20 +1,21 @@
-#include "message_queue.hpp"
+#include "game_worker.hpp"
+#include <iostream>
+#include <stdexcept>
+#include <cstdlib>
 
-struct GameMessage {
-    int sticks_left;
-    bool client_turn;
-};
+int main(int argc, char* argv[]) {
+    try {
+        if (argc < 2) {
+            std::cerr << "Usage: " << argv[0] << " <key>" << std::endl;
+            return 1;
+        }
 
-int main() {
-    MessageQueue mq("/tmp", 'G');
-    int sticks = 20;
-
-    while (sticks > 0) {
-        int taken;
-        mq.receive(&taken, sizeof(taken));
-        sticks -= taken;
-        GameMessage response{sticks, false};
-        mq.send(&response, sizeof(response));
+        key_t key = std::stol(argv[1]);
+        GameSubprocess game(key);
+        game.run();
+        return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "Game error: " + std::string(e.what()) << std::endl;
+        return 1;
     }
-    return 0;
 }

@@ -4,4 +4,4 @@ add_executable(client
 )
 
 target_include_directories(client PRIVATE include)
-target_link_libraries(client PRIVATE tcp_client logger pthread)
+target_link_libraries(client PRIVATE exceptions tcp_client logger pthread)

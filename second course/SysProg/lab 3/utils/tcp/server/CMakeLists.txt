@@ -4,10 +4,10 @@ add_library(tcp_server
 )
 
 target_link_libraries(tcp_server
-        PRIVATE logger
-        PRIVATE exceptions
-        PRIVATE shared_memory
-        PRIVATE semaphore
-        PRIVATE message_queue)
+        PUBLIC shared_memory
+        PUBLIC logger
+        PUBLIC exceptions
+        PUBLIC semaphore
+        PUBLIC message_queue)
 
 target_include_directories(tcp_server PUBLIC include)

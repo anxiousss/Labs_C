@@ -1,20 +1,36 @@
 #pragma once
-
-#include <sys/ipc.h>
-#include <sys/shm.h>
 #include <string>
+#include <vector>
+#include <memory>
+#include <sys/mman.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <stdexcept>
-#include <cstring>
+#include <system_error>
+#include <logger.hpp>
+#include <exceptions.hpp>
 
-class SharedMemory {
+struct SharedMemoryTask {
+    std::string filename;
+    std::string content;
+    std::string extension;
+    std::string result;
+    bool success = false;
+};
+
+class SharedMemoryManager {
 public:
-    SharedMemory(const std::string& path, int proj_id, size_t size);
-    ~SharedMemory();
-    void* getData() const;
+    explicit SharedMemoryManager(const std::string& name, size_t size = 4096);
+    ~SharedMemoryManager();
+
+    SharedMemoryTask receive();
+    void send(const SharedMemoryTask& task);
+    void close();
 
 private:
-    int shm_id;
-    void* data;
-    key_t key;
-    size_t size;
+    std::string name_;
+    size_t size_;
+    int shm_fd_;
+    void* ptr_;
+    std::unique_ptr<Logger> logger_;
 };

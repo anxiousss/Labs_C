@@ -1,32 +1,17 @@
 #pragma once
-
-#include <stdexcept>
 #include <string>
+#include <stdexcept>
+#include <logger.hpp>
 
-class SocketException : public std::runtime_error {
+class ExceptionBase : public std::runtime_error {
 public:
-    enum class OperationType {
-        SocketCreate,
-        Bind,
-        Listen,
-        Connect,
-        Accept,
-        Send,
-        Recv,
-        Close,
-        Unknown
-    };
+    explicit ExceptionBase(std::string message, log_lvl level, std::string source);
 
-    SocketException(OperationType op, int error_code, const std::string& context = "");
-
-    OperationType get_operation_type() const noexcept { return operation; }
-    int get_error_code() const noexcept { return error_code; }
-    const std::string& get_context() const noexcept { return context_msg; }
+    const std::string& getSource() const;
+    log_lvl getLogLevel() const;
+    void log(std::unique_ptr<Logger>& logger) const;
 
 private:
-    OperationType operation;
-    int error_code;
-    std::string context_msg;
-
-    static std::string create_message(OperationType op, int err, const std::string& ctx);
+    std::string source_;
+    log_lvl level_;
 };

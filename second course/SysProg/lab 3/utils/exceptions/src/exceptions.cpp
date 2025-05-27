@@ -1,35 +1,32 @@
 #include "exceptions.hpp"
-#include <sstream>
-#include <cstring>
 
-SocketException::SocketException(OperationType op, int error_code, const std::string& context)
-        : std::runtime_error(create_message(op, error_code, context)),
-          operation(op),
-          error_code(error_code),
-          context_msg(context) {}
+ExceptionBase::ExceptionBase(std::string message, log_lvl level, std::string source)
+        : std::runtime_error(std::move(message)), source_(std::move(source)), level_(level) {}
 
-std::string SocketException::create_message(OperationType op, int err, const std::string& ctx) {
-    std::ostringstream ss;
+const std::string& ExceptionBase::getSource() const {
+    return source_;
+}
 
-    ss << "Socket error during: ";
-    switch(op) {
-        case OperationType::SocketCreate: ss << "socket()"; break;
-        case OperationType::Bind:        ss << "bind()"; break;
-        case OperationType::Listen:      ss << "listen()"; break;
-        case OperationType::Connect:     ss << "connect()"; break;
-        case OperationType::Accept:      ss << "accept()"; break;
-        case OperationType::Send:        ss << "send()"; break;
-        case OperationType::Recv:        ss << "recv()"; break;
-        case OperationType::Close:       ss << "close()"; break;
-        default:                         ss << "unknown operation"; break;
+log_lvl ExceptionBase::getLogLevel() const {
+    return level_;
+}
+
+void ExceptionBase::log(std::unique_ptr<Logger>& logger) const {
+    switch (level_) {
+        case log_lvl::DEBUG:
+            logger->LogDebug("Exception in " + source_ + ": " + what());
+            break;
+        case log_lvl::INFO:
+            logger->LogInfo("Exception in " + source_ + ": " + what());
+            break;
+        case log_lvl::WARNING:
+            logger->LogWarning("Exception in " + source_ + ": " + what());
+            break;
+        case log_lvl::ERROR:
+            logger->LogError("Exception in " + source_ + ": " + what());
+            break;
+        case log_lvl::CRITICAL:
+            logger->LogCritic("Exception in " + source_ + ": " + what());
+            break;
     }
-
-    ss << "\nError code: " << err
-       << "\nSystem message: " << std::strerror(err);
-
-    if(!ctx.empty()) {
-        ss << "\nContext: " << ctx;
-    }
-
-    return ss.str();
 }

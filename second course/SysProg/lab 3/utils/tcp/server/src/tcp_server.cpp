@@ -1,203 +1,176 @@
 #include "tcp_server.hpp"
-#include "exceptions.hpp"
-#include <fstream>
-#include <filesystem>
+#include <stdexcept>
+#include <unistd.h>
+#include <fcntl.h>
 #include <system_error>
 
-namespace fs = std::filesystem;
-
-TcpServer::TcpServer() : running(false) {
-    LoggerBuilder builder("server");
-    logger = builder.set_level(log_lvl::DEBUG)
-            .set_file("../logs/server.log")
-            .build();
-
-    try {
-        compile_shm = std::make_unique<SharedMemory>("/tmp", 'C', sizeof(CompileTask));
-        compile_sem = std::make_unique<Semaphore>("/tmp", 'S', 0);
-    } catch (const std::exception& e) {
-        logger->LogCritic("IPC initialization failed: " + std::string(e.what()));
-        throw;
-    }
-
-    server_fd = socket(AF_INET, SOCK_STREAM, 0);
-    if (server_fd < 0) {
-        logger->LogError("Socket creation failed");
-        throw SocketException(SocketException::OperationType::SocketCreate, errno);
+TCPServer::TCPServer(uint16_t port)
+        : port_(port), server_fd_(-1), running_(false),
+          logger_(LoggerBuilder("TCPServer").set_console().build()) {
+    server_fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (server_fd_ == -1) {
+        throw TCPSocketCreationError();
     }
 
     int opt = 1;
-    if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt))) {
-        logger->LogError("Socket configuration failed");
-        throw SocketException(SocketException::OperationType::Bind, errno);
+    if (setsockopt(server_fd_, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
+                   &opt, sizeof(opt)) == -1) {
+        ::close(server_fd_);
+        throw TCPSocketCreationError();
     }
 
-    address.sin_family = AF_INET;
-    address.sin_addr.s_addr = INADDR_ANY;
-    address.sin_port = htons(8080);
+    sockaddr_in addr{};
+    addr.sin_family = AF_INET;
+    addr.sin_addr.s_addr = INADDR_ANY;
+    addr.sin_port = htons(port_);
 
-    if (bind(server_fd, (sockaddr*)&address, sizeof(address)) < 0) {
-        logger->LogError("Socket bind failed");
-        throw SocketException(SocketException::OperationType::Bind, errno);
+    if (bind(server_fd_, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
+        ::close(server_fd_);
+        throw TCPBindError(port_);
     }
-
-    if (listen(server_fd, 10) < 0) {
-        logger->LogError("Listen failed");
-        throw SocketException(SocketException::OperationType::Listen, errno);
-    }
-
-    running = true;
-    logger->LogInfo("Server started on port 8080");
 }
 
-void TcpServer::start() {
-    while (running) {
-        sockaddr_in client_addr{};
-        socklen_t client_len = sizeof(client_addr);
+TCPServer::~TCPServer() {
+    stop();
+    if (server_fd_ != -1) {
+        ::close(server_fd_);
+    }
+}
 
-        int client_socket = accept(server_fd, (sockaddr*)&client_addr, &client_len);
-        if (client_socket < 0) {
-            if (running) logger->LogError("Accept failed");
+void TCPServer::start() {
+    if (running_) {
+            throw TCPServerStartError(port_);
+    }
+
+    if (listen(server_fd_, SOMAXCONN) == -1) {
+        throw TCPListenError(port_);
+    }
+
+    running_ = true;
+    logger_->LogInfo("Server started on port " + std::to_string(port_));
+
+    std::thread accept_thread([this]() { this->accept_loop(); });
+    accept_thread.detach();
+}
+
+void TCPServer::stop() {
+    if (!running_) {
+        return;
+    }
+
+    running_ = false;
+
+    {
+        std::lock_guard<std::mutex> lock(clients_mutex_);
+        for (int fd : client_fds_) {
+            ::close(fd);
+        }
+        client_fds_.clear();
+    }
+
+    if (server_fd_ != -1) {
+        ::shutdown(server_fd_, SHUT_RDWR);
+        ::close(server_fd_);
+        server_fd_ = -1;
+    }
+
+    logger_->LogInfo("Server stopped");
+}
+
+void TCPServer::accept_loop() {
+    while (running_) {
+        sockaddr_in client_addr{};
+        socklen_t addr_len = sizeof(client_addr);
+        int client_fd = ::accept(server_fd_, (struct sockaddr*)&client_addr, &addr_len);
+
+        if (client_fd == -1) {
+            if (!running_) {
+                break;
+            }
+
+
+            if (errno == EINTR && !running_) {
+                break;
+            }
+
+            logger_->LogError("Accept failed");
             continue;
         }
 
-        std::lock_guard<std::mutex> lock(clients_mutex);
-        clients.try_emplace(
-                client_socket,
-                std::thread(&TcpServer::handle_client, this, client_socket),
-                true,
-                "",
-                std::vector<char>{}
-        );
+        {
+            std::lock_guard<std::mutex> lock(clients_mutex_);
+            client_fds_.push_back(client_fd);
+        }
+
+        logger_->LogInfo("New client connected: " + std::string(inet_ntoa(client_addr.sin_addr)) +
+                         ":" + std::to_string(ntohs(client_addr.sin_port)));
+
+        std::thread client_thread([this, client_fd]() { this->handle_client(client_fd); });
+        client_thread.detach();
     }
 }
 
-void TcpServer::handle_client(int client_socket) {
+void TCPServer::handle_client(int client_fd) {
     try {
         while (true) {
-            tcp_traffic_pkg pkg{};
-            int bytes_received = recv(client_socket, &pkg, sizeof(pkg), 0);
+            uint32_t net_size;
+            ssize_t bytes_read = ::recv(client_fd, &net_size, sizeof(net_size), 0);
 
-            if (bytes_received <= 0) {
-                if (bytes_received == 0) logger->LogInfo("Client disconnected");
-                else logger->LogError("Receive error");
+            if (bytes_read == 0) {
+                logger_->LogInfo("Client disconnected");
                 break;
             }
 
-            std::string message(pkg.msg, pkg.sz);
-            logger->LogDebug("Received: " + message);
-
-            if (message.substr(0, 2) == "1 " || message.substr(0, 2) == "2 ") {
-                receive_file(client_socket);
-            }
-            else if (message.substr(0, 2) == "3 ") {
-                int sticks = std::stoi(message.substr(2));
-                process_game_move(client_socket, sticks);
-            }
-            else if (message == "exit") {
+            if (bytes_read == -1) {
+                logger_->LogError("Receive failed");
                 break;
             }
+
+            uint32_t size = ntohl(net_size);
+
+            std::vector<char> buffer(size);
+            bytes_read = ::recv(client_fd, buffer.data(), size, 0);
+
+            if (bytes_read == 0) {
+                logger_->LogInfo("Client disconnected");
+                break;
+            }
+
+            if (bytes_read == -1) {
+                logger_->LogError("Receive failed");
+                break;
+            }
+
+            std::string message(buffer.data(), bytes_read);
+            logger_->LogDebug("Received command: " + message);
+
+            std::string response;
+
+            // TODO: Implement command routing to subprocesses
+            if (message.find("compile") == 0) {
+                response = "Processing compile command: " + message;
+            } else if (message.find("game") == 0) {
+                response = "Processing game command: " + message;
+            } else {
+                response = "Unknown command";
+            }
+
+            uint32_t net_response_size = htonl(response.size());
+            ::send(client_fd, &net_response_size, sizeof(net_response_size), 0);
+            ::send(client_fd, response.data(), response.size(), 0);
         }
+    } catch (const ExceptionBase& e) {
+        e.log(logger_);
     } catch (const std::exception& e) {
-        logger->LogError("Client handler error: " + std::string(e.what()));
+        logger_->LogError("Client handler error: " + std::string(e.what()));
     }
 
-    std::lock_guard<std::mutex> lock(clients_mutex);
-    if (auto it = clients.find(client_socket); it != clients.end()) {
-        close(client_socket);
-        clients.erase(it);
-    }
-}
-
-void TcpServer::receive_file(int client_socket) {
-    try {
-        std::unique_lock<std::mutex> lock(clients_mutex);
-        auto it = clients.find(client_socket);
-        if (it == clients.end()) return;
-
-        auto& client = it->second;
-        lock.unlock();
-
-        fs::path temp_dir = fs::temp_directory_path() / "server_files";
-        fs::create_directories(temp_dir);
-        fs::path file_path = temp_dir / client.current_file;
-
-        std::ofstream file(file_path, std::ios::binary);
-        if (!file) throw std::runtime_error("Failed to create file");
-
-        tcp_traffic_pkg pkg{};
-        do {
-            int bytes = recv(client_socket, &pkg, sizeof(pkg), 0);
-            if (bytes <= 0) break;
-            file.write(pkg.msg, pkg.sz);
-        } while (pkg.sz == sizeof(pkg.msg));
-
-        file.close();
-        logger->LogInfo("File received: " + file_path.string());
-
-        CompileTask::Type type = file_path.extension() == ".cpp" ?
-                                 CompileTask::Type::CPP : CompileTask::Type::TEX;
-
-        process_compile_task(client_socket, file_path.string(), type);
-    } catch (const std::exception& e) {
-        logger->LogError("File receive error: " + std::string(e.what()));
-    }
-}
-
-void TcpServer::process_compile_task(int client_socket, const std::string& file_path, CompileTask::Type type) {
-    CompileTask task{};
-    task.client_socket = client_socket;
-    strncpy(task.file_path, file_path.c_str(), sizeof(task.file_path));
-    task.type = type;
-
-    memcpy(compile_shm->getData(), &task, sizeof(task));
-    compile_sem->post();
-    logger->LogInfo("Compile task queued: " + file_path);
-}
-void TcpServer::process_game_move(int client_socket, int sticks) {
-    MessageQueue* mq_ptr = nullptr;
     {
-        std::lock_guard<std::mutex> lock(game_queues_mutex);
-
-        if (!game_queues.contains(client_socket)) {
-            game_queues[client_socket] = std::make_unique<MessageQueue>("/tmp", client_socket);
+        std::lock_guard<std::mutex> lock(clients_mutex_);
+        auto it = std::find(client_fds_.begin(), client_fds_.end(), client_fd);
+        if (it != client_fds_.end()) {
+            client_fds_.erase(it);
         }
-
-        mq_ptr = game_queues[client_socket].get();
     }
-
-    mq_ptr->send(&sticks, sizeof(sticks));
-
-    int response;
-    mq_ptr->receive(&response, sizeof(response));
-
-    std::string msg = "Sticks left: " + std::to_string(response);
-    tcp_traffic_pkg pkg{};
-    pkg.sz = msg.size();
-    memcpy(pkg.msg, msg.c_str(), msg.size());
-    send(client_socket, &pkg, sizeof(pkg), 0);
+    ::close(client_fd);
 }
-
-void TcpServer::stop() {
-    running = false;
-    shutdown(server_fd, SHUT_RDWR);
-    close(server_fd);
-    cleanup_resources();
-    logger->LogInfo("Server stopped");
-}
-
-void TcpServer::cleanup_resources() {
-    std::lock_guard<std::mutex> lock(clients_mutex);
-    for (auto& [socket, client] : clients) {
-        if (client.thread.joinable()) {
-            client.thread.join();
-        }
-        close(socket);
-    }
-    clients.clear();
-
-    game_queues.clear();
-    compile_shm.reset();
-    compile_sem.reset();
-}
-

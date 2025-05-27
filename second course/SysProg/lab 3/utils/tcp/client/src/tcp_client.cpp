@@ -1,108 +1,114 @@
 #include "tcp_client.hpp"
-#include "exceptions.hpp"
-#include <fstream>
-#include <filesystem>
-#include <system_error>
-#include <cstring>
 
-namespace fs = std::filesystem;
-
-TcpClient::TcpClient() {
-    LoggerBuilder builder("client");
-    logger = builder.set_level(log_lvl::DEBUG)
-            .set_file("../logs/client.log")
-            .build();
-
-    client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_socket < 0) {
-        logger->LogError("Socket creation failed");
-        throw SocketException(SocketException::OperationType::SocketCreate, errno);
+TCPClient::TCPClient(const std::string& host, uint16_t port)
+        : host_(host), port_(port), socket_fd_(-1),
+          logger_(LoggerBuilder("TCPClient").set_console().build()) {
+    socket_fd_ = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (socket_fd_ == -1) {
+        throw TCPClientConnectionError(host_, port_);
     }
 
-    serverAddress.sin_family = AF_INET;
-    serverAddress.sin_port = htons(8080);
-    if (inet_pton(AF_INET, "127.0.0.1", &serverAddress.sin_addr) <= 0) {
-        logger->LogError("Invalid address");
-        throw SocketException(SocketException::OperationType::Connect, errno);
-    }
+    server_addr_.sin_family = AF_INET;
+    server_addr_.sin_port = htons(port_);
 
-    if (connect(client_socket, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {
-        logger->LogError("Connection failed");
-        throw SocketException(SocketException::OperationType::Connect, errno);
+    if (inet_pton(AF_INET, host_.c_str(), &server_addr_.sin_addr) <= 0) {
+        throw std::runtime_error("Invalid address");
     }
-
-    logger->LogInfo("Connected to server");
 }
 
-void TcpClient::send_msg(const std::string& msg) {
-    tcp_traffic_pkg pkg{};
-    pkg.sz = msg.size();
-    std::memcpy(pkg.msg, msg.data(), msg.size());
-
-    ssize_t bytes_sent = send(client_socket, &pkg, sizeof(pkg), 0);
-    if (bytes_sent < 0) {
-        logger->LogError("Message send failed");
-        throw SocketException(SocketException::OperationType::Send, errno);
+TCPClient::~TCPClient() {
+    if (socket_fd_ != -1) {
+        ::close(socket_fd_);
     }
-    logger->LogDebug("Sent message: " + msg);
 }
 
-void TcpClient::send_file(const std::string& file_path) {
+void TCPClient::connect() {
+    if (::connect(socket_fd_, (struct sockaddr*)&server_addr_, sizeof(server_addr_)) == -1) {
+        throw TCPClientConnectionError(host_, port_);
+    }
+    logger_->LogInfo("Connected to server at " + host_ + ":" + std::to_string(port_));
+}
+
+void TCPClient::disconnect() {
+    if (socket_fd_ != -1) {
+        ::close(socket_fd_);
+        socket_fd_ = -1;
+        logger_->LogInfo("Disconnected from server");
+    }
+}
+
+void TCPClient::send(const std::string& message) {
+    if (socket_fd_ == -1) {
+        throw TCPClientSendError();
+    }
+
     try {
-        fs::path path(file_path);
-        if (!fs::exists(path)) {
-            logger->LogError("File not found: " + file_path);
-            throw std::runtime_error("File not found");
+        send_size(message.size());
+
+        ssize_t bytes_sent = ::send(socket_fd_, message.data(), message.size(), 0);
+        if (bytes_sent == -1) {
+            throw TCPClientSendError();
         }
-
-        std::ifstream file(file_path, std::ios::binary | std::ios::ate);
-        size_t file_size = file.tellg();
-        file.seekg(0);
-
-        tcp_traffic_pkg pkg{};
-        while (!file.eof()) {
-            file.read(pkg.msg, sizeof(pkg.msg));
-            pkg.sz = file.gcount();
-
-            if (send(client_socket, &pkg, sizeof(pkg), 0) < 0) {
-                logger->LogError("File send failed");
-                throw SocketException(SocketException::OperationType::Send, errno);
-            }
-        }
-        logger->LogInfo("File sent: " + file_path + " (" + std::to_string(file_size) + " bytes)");
-    } catch (const fs::filesystem_error& e) {
-        logger->LogError("Filesystem error: " + std::string(e.what()));
+        logger_->LogDebug("Sent " + std::to_string(bytes_sent) + " bytes to server");
+    } catch (const std::exception& e) {
+        logger_->LogError("Send error: " + std::string(e.what()));
+        disconnect();
         throw;
     }
 }
 
-std::string TcpClient::receive_response() {
-    tcp_traffic_pkg pkg{};
-    ssize_t bytes_received = recv(client_socket, &pkg, sizeof(pkg), 0);
-
-    if (bytes_received < 0) {
-        logger->LogError("Receive failed");
-        throw SocketException(SocketException::OperationType::Recv, errno);
-    }
-    if (bytes_received == 0) {
-        logger->LogWarning("Connection closed by server");
-        return "[CONNECTION CLOSED]";
+std::string TCPClient::receive() {
+    if (socket_fd_ == -1) {
+        throw TCPClientConnectionError(host_, port_);
     }
 
-    std::string response(pkg.msg, pkg.sz);
-    logger->LogDebug("Received response: " + response);
-    return response;
+    try {
+        uint32_t size = receive_size();
+
+        std::vector<char> buffer(size);
+        ssize_t bytes_received = ::recv(socket_fd_, buffer.data(), size, 0);
+
+        if (bytes_received == -1) {
+            throw std::runtime_error("Receive failed");
+        }
+
+        if (bytes_received == 0) {
+            logger_->LogInfo("Connection closed by server");
+            disconnect();
+            return "";
+        }
+
+        logger_->LogDebug("Received " + std::to_string(bytes_received) + " bytes from server");
+        return std::string(buffer.data(), bytes_received);
+    } catch (const std::exception& e) {
+        logger_->LogError("Receive error: " + std::string(e.what()));
+        disconnect();
+        throw;
+    }
 }
 
-TcpClient::~TcpClient() {
-    if (client_socket != -1) {
-        try {
-            send_msg("exit");
-            shutdown(client_socket, SHUT_RDWR);
-            close(client_socket);
-        } catch (...) {
-            logger->LogError("Error during client shutdown");
-        }
+void TCPClient::send_size(uint32_t size) {
+    uint32_t net_size = htonl(size);
+    ssize_t bytes_sent = ::send(socket_fd_, &net_size, sizeof(net_size), 0);
+
+    if (bytes_sent == -1) {
+        throw std::runtime_error("Size send failed");
     }
-    logger->LogInfo("Client shutdown complete");
+}
+
+uint32_t TCPClient::receive_size() {
+    uint32_t net_size;
+    ssize_t bytes_received = ::recv(socket_fd_, &net_size, sizeof(net_size), 0);
+
+    if (bytes_received == -1) {
+        throw std::runtime_error("Size receive failed");
+    }
+
+    if (bytes_received == 0) {
+        logger_->LogInfo("Connection closed by server during size receive");
+        disconnect();
+        return 0;
+    }
+
+    return ntohl(net_size);
 }
