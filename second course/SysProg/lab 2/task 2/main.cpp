@@ -56,6 +56,7 @@ int main() {
         queue->wake();
 
         for (auto& ana : analyzers) {
+            ana->stop();
             ana->join();
         }
 
