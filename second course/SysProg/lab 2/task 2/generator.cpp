@@ -3,6 +3,7 @@
 #include <chrono>
 #include <utility>
 #include <arpa/inet.h>
+#include <netinet/in.h>
 
 LogsGenerator::LogsGenerator(std::unique_ptr<Logger> logger,
                              std::shared_ptr<TsQueue<tcp_traffic>> tsQueue,
@@ -10,8 +11,8 @@ LogsGenerator::LogsGenerator(std::unique_ptr<Logger> logger,
         : tsQueue_(std::move(tsQueue)),
           logger_(std::move(logger)) {
     n_msgs_ = (n_msgs < 2) ? 2 : n_msgs;
+    my_id_ = next_id.fetch_add(1, std::memory_order_relaxed);
     worker_ = std::thread(&LogsGenerator::worker_thread, this);
-    ++id;
 }
 
 LogsGenerator::~LogsGenerator() {
@@ -26,11 +27,6 @@ void LogsGenerator::join() {
     }
 }
 
-std::string LogsGenerator::ip_to_string(in_addr_t ip) {
-    struct in_addr addr {};
-    addr.s_addr = ip;
-    return inet_ntoa(addr);
-}
 
 void LogsGenerator::worker_thread() {
     std::mt19937 gen(std::random_device{}());
@@ -46,10 +42,10 @@ void LogsGenerator::worker_thread() {
 
     std::string src_ip_str = ip_to_string(src_ip);
     std::string dst_ip_str = ip_to_string(dst_ip);
-    std::string src_port_str = std::to_string(ntohs(src_port));
-    std::string dst_port_str = std::to_string(ntohs(dst_port));
+    std::string src_port_str = std::to_string(to_host_port(src_port));
+    std::string dst_port_str = std::to_string(to_host_port(dst_port));
 
-    std::string connect_msg = "Generator " + std::to_string(id) + " CONNECT " +
+    std::string connect_msg = "Generator " + std::to_string(my_id_) + " CONNECT " +
                               src_ip_str + ":" + src_port_str + " → " + dst_ip_str + ":" + dst_port_str;
     logger_->LogInfo(connect_msg);
 
@@ -58,15 +54,15 @@ void LogsGenerator::worker_thread() {
 
     for (size_t i = 0; i < traffic.pkgs_sz_; ++i) {
         auto& pkg = traffic.pkgs[i];
-        pkg.src_port = src_port;
+        pkg.src_port = to_network_port(src_port);
         pkg.dst_addr = dst_ip;
-        pkg.dst_port = dst_port;
+        pkg.dst_port = to_network_port(dst_port);
         pkg.sz = size_dist(gen);
 
         std::string type = (i % 2 == 0) ? "GET" : "POST";
-        std::string data_msg = "Generator " + std::to_string(id) + " " + type + " " +
+        std::string data_msg = "Generator " + std::to_string(my_id_) + " " + type + " " +
                                src_ip_str + ":" + src_port_str + " → " + dst_ip_str + ":" + dst_port_str +
-                               " (" + std::to_string(pkg.sz) + ")";
+                               " (" + std::to_string(pkg.sz) + " bytes)";
         logger_->LogInfo(data_msg);
         std::this_thread::sleep_for(std::chrono::milliseconds(delay(gen)));
     }
@@ -74,7 +70,7 @@ void LogsGenerator::worker_thread() {
     tsQueue_->push(std::move(traffic));
 
     bool unexpected = (is_fatal(gen) < 10);
-    std::string disconnect_msg = "Generator " + std::to_string(id) + " DISCONNECT " +
+    std::string disconnect_msg = "Generator " + std::to_string(my_id_) + " DISCONNECT " +
                                  src_ip_str + ":" + src_port_str + " → " + dst_ip_str + ":" + dst_port_str;
     if (unexpected) {
         logger_->LogError(disconnect_msg + " (unexpected)");

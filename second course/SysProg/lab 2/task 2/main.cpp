@@ -3,9 +3,6 @@
 #include <memory>
 #include <thread>
 #include <map>
-#include <mutex>
-#include <atomic>
-#include <chrono>
 #include <stdexcept>
 #include <netinet/in.h>
 #include "../task1/logger.hpp"
@@ -56,28 +53,16 @@ int main() {
         queue->wake();
 
         for (auto& ana : analyzers) {
+            ana->stop();
             ana->join();
         }
 
         auto global_stats = AnalyzerStatsCollector::collect_stats(analyzers);
-
-        std::cout << "\n=== Глобальная статистика по IP-адресам ===\n";
-        for (const auto& [ip, stats] : global_stats) {
-            std::cout << "IP: " << LogsGenerator::ip_to_string(ip) << "\n"
-                      << "  Отправлено: " << stats.sent_bytes << " байт\n"
-                      << "  Получено: " << stats.received_bytes << " байт\n"
-                      << "  Соединений: " << stats.connections << "\n"
-                      << "  Порты назначения:\n";
-
-            for (const auto& [port, count] : stats.dst_ports) {
-                std::cout << "    Порт " << ntohs(port) << ": " << count << " раз\n";
-            }
-            std::cout << "-------------------------\n";
-        }
+        AnalyzerStatsCollector::print_stats(global_stats);
 
         return 0;
     } catch (const std::exception& e) {
-        std::cerr << "Ошибка: " << e.what() << std::endl;
+        std::cerr << "Error: " << e.what() << std::endl;
         return 1;
     }
 }

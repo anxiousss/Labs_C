@@ -13,6 +13,8 @@ public:
     struct IpStats {
         size_t sent_bytes = 0;
         size_t received_bytes = 0;
+        size_t sent_packets = 0;
+        size_t received_packets = 0;
         size_t connections = 0;
         std::map<in_port_t, size_t> dst_ports;
     };
@@ -42,4 +44,6 @@ class AnalyzerStatsCollector {
 public:
     static std::map<in_addr_t, LogAnalyzer::IpStats> collect_stats(
             const std::vector<std::unique_ptr<LogAnalyzer>>& analyzers);
+
+    static void print_stats(const std::map<in_addr_t, LogAnalyzer::IpStats>& stats);
 };

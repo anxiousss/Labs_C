@@ -3,6 +3,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <netinet/in.h>
+#include <arpa/inet.h>
 
 struct tcp_traffic_pkg {
     in_port_t src_port;
@@ -10,6 +11,21 @@ struct tcp_traffic_pkg {
     in_port_t dst_port;
     size_t sz;
 };
+
+inline std::string ip_to_string(in_addr_t ip) {
+    struct in_addr addr;
+    addr.s_addr = ip;
+    return inet_ntoa(addr);
+}
+
+inline in_port_t to_host_port(in_port_t port) {
+    return ntohs(port);
+}
+
+inline in_port_t to_network_port(in_port_t port) {
+    return htons(port);
+}
+
 
 struct tcp_traffic {
     in_addr_t src_addr_;

@@ -15,7 +15,6 @@ public:
                   int n_msgs);
     ~LogsGenerator();
     void join();
-    static std::string ip_to_string(in_addr_t ip);
 
 
 private:
@@ -28,8 +27,9 @@ private:
     std::shared_ptr<TsQueue<tcp_traffic>> tsQueue_;
     std::unique_ptr<Logger> logger_;
     std::thread worker_;
-    inline static int id = 1;
+    int my_id_;
     mutable std::mutex stats_mutex_;
     std::map<in_addr_t, SessionStats> stats_;
+    inline static std::atomic<int> next_id{1};
     void worker_thread();
 };
